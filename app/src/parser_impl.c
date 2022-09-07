@@ -198,7 +198,7 @@ parser_error_t _readString(parser_context_t *c, uint8_t *buff, uint16_t buffLen)
         break;
     }
 
-    if (strLen > buffLen) {
+    if (strLen >= buffLen) {
         return parser_msgpack_str_too_big;
     }
     CHECK_ERROR(_readBytes(c, buff, strLen))
