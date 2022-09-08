@@ -404,15 +404,15 @@ static parser_error_t _readAssetParams(parser_context_t *c, txn_asset_config *as
     uint8_t available_params[MAX_PARAM_SIZE];
     memset(available_params, 0xFF, MAX_PARAM_SIZE);
 
-    uint8_t paramsSize = 0;
-    CHECK_ERROR(_readMapSize(c, &paramsSize))
+    uint16_t paramsSize = 0;
+    CHECK_ERROR(_readMapSize(c, (uint8_t*)&paramsSize))
 
     if(paramsSize > MAX_PARAM_SIZE) {
         return parser_unexpected_number_items;
     }
 
     uint8_t key[10] = {0};
-    for(uint8_t i = 0; i < paramsSize; i++) {
+    for(uint16_t i = 0; i < paramsSize; i++) {
         CHECK_ERROR(_readString(c, key, sizeof(key)))
 
         if (strncmp((char*)key, KEY_APARAMS_TOTAL, strlen(KEY_APARAMS_TOTAL)) == 0) {
@@ -615,8 +615,8 @@ parser_error_t _verifyAccounts(parser_context_t *c, uint8_t* num_accounts, uint8
 
 parser_error_t _readStateSchema(parser_context_t *c, state_schema *schema)
 {
-    uint8_t mapSize = 0;
-    CHECK_ERROR(_readMapSize(c, &mapSize))
+    uint16_t mapSize = 0;
+    CHECK_ERROR(_readMapSize(c, (uint8_t*)&mapSize))
     uint8_t key[32];
     for (size_t i = 0; i < mapSize; i++) {
         CHECK_ERROR(_readString(c, key, sizeof(key)))
@@ -985,10 +985,10 @@ parser_error_t _readArray_args(parser_context_t *c, uint8_t args[][MAX_ARGLEN], 
 
 parser_error_t _read(parser_context_t *c, parser_tx_t *v)
 {
-    uint8_t keyLen = 0;
+    uint16_t keyLen = 0;
     CHECK_ERROR(initializeItemArray())
 
-    CHECK_ERROR(_readMapSize(c, &keyLen))
+    CHECK_ERROR(_readMapSize(c, (uint8_t*)&keyLen))
     if(keyLen > UINT8_MAX) {
         return parser_unexpected_number_items;
     }
