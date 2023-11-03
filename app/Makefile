@@ -80,6 +80,11 @@ SDK_SOURCE_PATH += lib_u2f
 LDFLAGS  += -z muldefs
 APP_SOURCE_PATH += $(MY_DIR)/../deps/sha512
 
+
+ifeq ($(TARGET_NAME),TARGET_STAX)
+	SDK_SOURCE_PATH += qrcode
+endif
+
 .PHONY: rust
 rust:
 	@echo "No rust code"
