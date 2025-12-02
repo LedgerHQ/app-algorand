@@ -1,0 +1,17 @@
+# Based on the style used in ledger-zxlib dependency
+BasedOnStyle: Google
+IndentWidth: 4
+ColumnLimit: 120
+DerivePointerAlignment: false
+PointerAlignment: Right
+
+# CRITICAL: Prevent include reordering
+SortIncludes: Never
+
+# Optional: Additional sensible defaults for embedded C code
+AlignConsecutiveMacros: true
+AlignConsecutiveDeclarations: false
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+BreakBeforeBraces: Linux
+IndentCaseLabels: false

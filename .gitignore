@@ -48,6 +48,10 @@
 *.mod*
 *.cmd
 
+# Temporary directory with snapshots taken during test runs
+snapshots-tmp/
+
+
 ##########################
 
 tests_zemu/.yarn/*
@@ -77,3 +81,7 @@ tests_zemu/yarn.lock
 tests_tools/target
 fuzz-*.log
 /scan-build
+
+*.pyc
+__pycache__/
+.pytest_cache/

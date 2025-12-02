@@ -1,18 +1,18 @@
 /*******************************************************************************
-*  (c) 2018 - 2022 Zondax AG
-*
-*  Licensed under the Apache License, Version 2.0 (the "License");
-*  you may not use this file except in compliance with the License.
-*  You may obtain a copy of the License at
-*
-*      http://www.apache.org/licenses/LICENSE-2.0
-*
-*  Unless required by applicable law or agreed to in writing, software
-*  distributed under the License is distributed on an "AS IS" BASIS,
-*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-*  See the License for the specific language governing permissions and
-*  limitations under the License.
-********************************************************************************/
+ *  (c) 2018 - 2022 Zondax AG
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ ********************************************************************************/
 
 #include "common/parser.h"
 #include "parser_impl.h"
@@ -120,21 +120,21 @@ static uint8_t num_json_items;
 
 static credential_public_key_t credential_public_key;
 
-#define KEY_VALUE_CRV -1
-#define KEY_VALUE_KTY 1
-#define KEY_VALUE_ALG 3
+#define KEY_VALUE_CRV     -1
+#define KEY_VALUE_KTY     1
+#define KEY_VALUE_ALG     3
 #define KEY_VALUE_KEY_OPS 4
-#define INT_VAULE_SIGN 1
-#define INT_VAULE_VERIFY 2
+#define INT_VAULE_SIGN    1
+#define INT_VAULE_VERIFY  2
 
 // crv Types
-#define CRV_P256 1
-#define CRV_P384 2
-#define CRV_P521 3
-#define CRV_X25519 4
-#define CRV_X448 5
+#define CRV_P256    1
+#define CRV_P384    2
+#define CRV_P521    3
+#define CRV_X25519  4
+#define CRV_X448    5
 #define CRV_ED25519 6
-#define CRV_ED448 7
+#define CRV_ED448   7
 
 #define MAX_PARAM_SIZE 12
 #define MAX_ITEM_ARRAY 50
@@ -159,23 +159,22 @@ static parser_error_t _readRequestId(parser_context_t *c, parser_arbitrary_data_
 static parser_error_t checkCredentialPublicKeyItem(cbor_value_t *key, cbor_value_t *value);
 static parser_error_t checkExtensionsItem(cbor_value_t *key, cbor_value_t *value);
 
-#define SCOPE_AUTH 0x01
+#define SCOPE_AUTH      0x01
 #define ENCODING_BASE64 0x01
 
 #define AAGUID_LEN 16
 
-#define DISPLAY_ITEM(type, len, counter)        \
-    for(uint8_t j = 0; j < len; j++) {          \
-        CHECK_ERROR(addItem(type))              \
-        counter++;                              \
+#define DISPLAY_ITEM(type, len, counter) \
+    for (uint8_t j = 0; j < len; j++) {  \
+        CHECK_ERROR(addItem(type))       \
+        counter++;                       \
     }
 
-static parser_error_t parser_init_context(parser_context_t *ctx,
-                                   const uint8_t *buffer,
-                                   uint16_t bufferSize,
-                                   txn_content_e content) {
+static parser_error_t parser_init_context(parser_context_t *ctx, const uint8_t *buffer, uint16_t bufferSize,
+                                          txn_content_e content)
+{
     if (ctx == NULL || bufferSize == 0 || buffer == NULL) {
-         return parser_init_context_empty;
+        return parser_init_context_empty;
     }
 
     ctx->offset = 0;
@@ -191,14 +190,15 @@ static parser_error_t parser_init_context(parser_context_t *ctx,
     return parser_ok;
 }
 
-parser_error_t parser_init(parser_context_t *ctx, const uint8_t *buffer, uint16_t bufferSize, txn_content_e content) {
+parser_error_t parser_init(parser_context_t *ctx, const uint8_t *buffer, uint16_t bufferSize, txn_content_e content)
+{
     CHECK_ERROR(parser_init_context(ctx, buffer, bufferSize, content))
     return parser_ok;
 }
 
 static parser_error_t initializeItemArray()
 {
-    for(uint8_t i = 0; i < MAX_ITEM_ARRAY; i++) {
+    for (uint8_t i = 0; i < MAX_ITEM_ARRAY; i++) {
         itemArray[i] = 0xFF;
     }
     itemIndex = 0;
@@ -207,7 +207,7 @@ static parser_error_t initializeItemArray()
 
 parser_error_t addItem(uint8_t displayIdx)
 {
-    if(itemIndex >= MAX_ITEM_ARRAY) {
+    if (itemIndex >= MAX_ITEM_ARRAY) {
         return parser_unexpected_buffer_end;
     }
     itemArray[itemIndex] = displayIdx;
@@ -216,9 +216,9 @@ parser_error_t addItem(uint8_t displayIdx)
     return parser_ok;
 }
 
-parser_error_t getItem(uint8_t index, uint8_t* displayIdx)
+parser_error_t getItem(uint8_t index, uint8_t *displayIdx)
 {
-    if(index >= itemIndex) {
+    if (index >= itemIndex) {
         return parser_display_page_out_of_range;
     }
     *displayIdx = itemArray[index];
@@ -238,27 +238,27 @@ static uint8_t getMsgPackType(uint8_t byte)
 parser_error_t _readMapSize(parser_context_t *c, uint16_t *mapItems)
 {
     if (c == NULL || mapItems == NULL) {
-         return parser_unexpected_value;
+        return parser_unexpected_value;
     }
 
     uint8_t byte = 0;
     CHECK_ERROR(_readUInt8(c, &byte))
 
     switch (getMsgPackType(byte)) {
-        case FIXMAP_0:
-            *mapItems = (uint16_t) byte - FIXMAP_0;
+    case FIXMAP_0:
+        *mapItems = (uint16_t)byte - FIXMAP_0;
         break;
 
-        case MAP16:
-            CHECK_ERROR(_readUInt16(c, mapItems))
+    case MAP16:
+        CHECK_ERROR(_readUInt16(c, mapItems))
         break;
 
-        case MAP32:
-            return parser_msgpack_map_type_not_supported;
+    case MAP32:
+        return parser_msgpack_map_type_not_supported;
         break;
 
-        default:
-            return parser_msgpack_unexpected_type;
+    default:
+        return parser_msgpack_unexpected_type;
     }
     return parser_ok;
 }
@@ -273,18 +273,18 @@ parser_error_t _readArraySize(parser_context_t *c, uint8_t *arrayItems)
         return parser_ok;
     }
     switch (byte) {
-        case ARR16: {
-            uint16_t tmpItems = 0;
-            CHECK_ERROR(_readUInt16(c, &tmpItems))
-            if(tmpItems > UINT8_MAX) {
-                return parser_unexpected_number_items;
-            }
-            *arrayItems = (uint8_t) tmpItems;
-            return parser_ok;
+    case ARR16: {
+        uint16_t tmpItems = 0;
+        CHECK_ERROR(_readUInt16(c, &tmpItems))
+        if (tmpItems > UINT8_MAX) {
+            return parser_unexpected_number_items;
         }
-        case ARR32:
-            // Not supported
-            break;
+        *arrayItems = (uint8_t)tmpItems;
+        return parser_ok;
+    }
+    case ARR32:
+        // Not supported
+        break;
     }
 
     return parser_msgpack_unexpected_type;
@@ -349,7 +349,7 @@ parser_error_t _readString(parser_context_t *c, uint8_t *buff, uint16_t buffLen)
     return parser_ok;
 }
 
-parser_error_t _readInteger(parser_context_t *c, uint64_t* value)
+parser_error_t _readInteger(parser_context_t *c, uint64_t *value)
 {
     uint8_t intType = 0;
     CHECK_ERROR(_readBytes(c, &intType, 1))
@@ -359,8 +359,7 @@ parser_error_t _readInteger(parser_context_t *c, uint64_t* value)
         return parser_ok;
     }
 
-    switch (intType)
-    {
+    switch (intType) {
     case UINT8: {
         uint8_t tmp = 0;
         CHECK_ERROR(_readUInt8(c, &tmp))
@@ -396,24 +395,23 @@ parser_error_t _readBinFixed(parser_context_t *c, uint8_t *buff, uint16_t buffer
     uint8_t binType = 0;
     uint8_t binLen = 0;
     CHECK_ERROR(_readUInt8(c, &binType))
-    switch (binType)
-    {
-        case BIN8: {
-            CHECK_ERROR(_readUInt8(c, &binLen))
-            break;
-        }
-        case BIN16:
-        case BIN32: {
-            return parser_msgpack_bin_type_not_supported;
-            break;
-        }
-        default: {
-            return parser_msgpack_bin_type_expected;
-            break;
-        }
+    switch (binType) {
+    case BIN8: {
+        CHECK_ERROR(_readUInt8(c, &binLen))
+        break;
+    }
+    case BIN16:
+    case BIN32: {
+        return parser_msgpack_bin_type_not_supported;
+        break;
+    }
+    default: {
+        return parser_msgpack_bin_type_expected;
+        break;
+    }
     }
 
-    if(binLen != bufferLen) {
+    if (binLen != bufferLen) {
         return parser_msgpack_bin_unexpected_size;
     }
     CHECK_ERROR(_readBytes(c, buff, bufferLen))
@@ -424,26 +422,25 @@ static parser_error_t _readBinSize(parser_context_t *c, uint16_t *binSize)
 {
     uint8_t binType = 0;
     CHECK_ERROR(_readUInt8(c, &binType))
-    switch (binType)
-    {
-        case BIN8: {
-            uint8_t tmp = 0;
-            CHECK_ERROR(_readUInt8(c, &tmp))
-            *binSize = (uint16_t)tmp;
-            break;
-        }
-        case BIN16: {
-            CHECK_ERROR(_readUInt16(c, binSize))
-            break;
-        }
-        case BIN32: {
-            return parser_msgpack_bin_type_not_supported;
-            break;
-        }
-        default: {
-            return parser_msgpack_bin_type_expected;
-            break;
-        }
+    switch (binType) {
+    case BIN8: {
+        uint8_t tmp = 0;
+        CHECK_ERROR(_readUInt8(c, &tmp))
+        *binSize = (uint16_t)tmp;
+        break;
+    }
+    case BIN16: {
+        CHECK_ERROR(_readUInt16(c, binSize))
+        break;
+    }
+    case BIN32: {
+        return parser_msgpack_bin_type_not_supported;
+        break;
+    }
+    default: {
+        return parser_msgpack_bin_type_expected;
+        break;
+    }
     }
     return parser_ok;
 }
@@ -453,29 +450,28 @@ static parser_error_t _verifyBin(parser_context_t *c, uint16_t *buffer_len, uint
     uint8_t binType = 0;
     uint16_t binLen = 0;
     CHECK_ERROR(_readUInt8(c, &binType))
-    switch (binType)
-    {
-        case BIN8: {
-            uint8_t tmp = 0;
-            CHECK_ERROR(_readUInt8(c, &tmp))
-            binLen = (uint16_t)tmp;
-            break;
-        }
-        case BIN16: {
-            CHECK_ERROR(_readUInt16(c, &binLen))
-            break;
-        }
-        case BIN32: {
-            return parser_msgpack_bin_type_not_supported;
-            break;
-        }
-        default: {
-            return parser_msgpack_bin_type_expected;
-            break;
-        }
+    switch (binType) {
+    case BIN8: {
+        uint8_t tmp = 0;
+        CHECK_ERROR(_readUInt8(c, &tmp))
+        binLen = (uint16_t)tmp;
+        break;
+    }
+    case BIN16: {
+        CHECK_ERROR(_readUInt16(c, &binLen))
+        break;
+    }
+    case BIN32: {
+        return parser_msgpack_bin_type_not_supported;
+        break;
+    }
+    default: {
+        return parser_msgpack_bin_type_expected;
+        break;
+    }
     }
 
-    if(binLen > max_buffer_len) {
+    if (binLen > max_buffer_len) {
         return parser_msgpack_bin_unexpected_size;
     }
 
@@ -489,29 +485,28 @@ static parser_error_t _readBin(parser_context_t *c, uint8_t *buff, uint16_t *buf
     uint8_t binType = 0;
     uint16_t binLen = 0;
     CHECK_ERROR(_readUInt8(c, &binType))
-    switch (binType)
-    {
-        case BIN8: {
-            uint8_t tmp = 0;
-            CHECK_ERROR(_readUInt8(c, &tmp))
-            binLen = (uint16_t)tmp;
-            break;
-        }
-        case BIN16: {
-            CHECK_ERROR(_readUInt16(c, &binLen))
-            break;
-        }
-        case BIN32: {
-            return parser_msgpack_bin_type_not_supported;
-            break;
-        }
-        default: {
-            return parser_msgpack_bin_type_expected;
-            break;
-        }
+    switch (binType) {
+    case BIN8: {
+        uint8_t tmp = 0;
+        CHECK_ERROR(_readUInt8(c, &tmp))
+        binLen = (uint16_t)tmp;
+        break;
+    }
+    case BIN16: {
+        CHECK_ERROR(_readUInt16(c, &binLen))
+        break;
+    }
+    case BIN32: {
+        return parser_msgpack_bin_type_not_supported;
+        break;
+    }
+    default: {
+        return parser_msgpack_bin_type_expected;
+        break;
+    }
     }
 
-    if(binLen > bufferMaxSize) {
+    if (binLen > bufferMaxSize) {
         return parser_msgpack_bin_unexpected_size;
     }
 
@@ -520,62 +515,57 @@ static parser_error_t _readBin(parser_context_t *c, uint8_t *buff, uint16_t *buf
     return parser_ok;
 }
 
-
 static parser_error_t _getPointerBin(parser_context_t *c, const uint8_t **buff, uint16_t *bufferLen)
 {
     uint8_t binType = 0;
     uint16_t binLen = 0;
     CHECK_ERROR(_readUInt8(c, &binType))
-    switch (binType)
-    {
-        case BIN8: {
-            uint8_t tmp = 0;
-            CHECK_ERROR(_readUInt8(c, &tmp))
-            binLen = (uint16_t)tmp;
-            break;
-        }
-        case BIN16: {
-            CHECK_ERROR(_readUInt16(c, &binLen))
-            break;
-        }
-        case BIN32: {
-            return parser_msgpack_bin_type_not_supported;
-            break;
-        }
-        default: {
-            return parser_msgpack_bin_type_expected;
-            break;
-        }
+    switch (binType) {
+    case BIN8: {
+        uint8_t tmp = 0;
+        CHECK_ERROR(_readUInt8(c, &tmp))
+        binLen = (uint16_t)tmp;
+        break;
+    }
+    case BIN16: {
+        CHECK_ERROR(_readUInt16(c, &binLen))
+        break;
+    }
+    case BIN32: {
+        return parser_msgpack_bin_type_not_supported;
+        break;
+    }
+    default: {
+        return parser_msgpack_bin_type_expected;
+        break;
+    }
     }
 
     *bufferLen = binLen;
 
     CHECK_ERROR(_getPointerBytes(c, buff, *bufferLen));
 
-
     return parser_ok;
 }
-
 
 parser_error_t _readBool(parser_context_t *c, uint8_t *value)
 {
     uint8_t tmp = 0;
     CHECK_ERROR(_readUInt8(c, &tmp))
-    switch (tmp)
-    {
-        case BOOL_TRUE: {
-            *value = 1;
-            break;
-        }
+    switch (tmp) {
+    case BOOL_TRUE: {
+        *value = 1;
+        break;
+    }
 
-        case BOOL_FALSE: {
-            *value = 0;
-            break;
-        }
-        default: {
-            return parser_msgpack_bool_type_expected;
-            break;
-        }
+    case BOOL_FALSE: {
+        *value = 0;
+        break;
+    }
+    default: {
+        return parser_msgpack_bool_type_expected;
+        break;
+    }
     }
     return parser_ok;
 }
@@ -588,87 +578,88 @@ static parser_error_t _readAssetParams(parser_context_t *c, txn_asset_config *as
     uint16_t paramsSize = 0;
     CHECK_ERROR(_readMapSize(c, &paramsSize))
 
-    if(paramsSize > MAX_PARAM_SIZE) {
+    if (paramsSize > MAX_PARAM_SIZE) {
         return parser_unexpected_number_items;
     }
 
     uint8_t key[10] = {0};
-    for(uint16_t i = 0; i < paramsSize; i++) {
+    for (uint16_t i = 0; i < paramsSize; i++) {
         CHECK_ERROR(_readString(c, key, sizeof(key)))
 
-        if (strncmp((char*)key, KEY_APARAMS_TOTAL, strlen(KEY_APARAMS_TOTAL)) == 0) {
+        if (strncmp((char *)key, KEY_APARAMS_TOTAL, strlen(KEY_APARAMS_TOTAL)) == 0) {
             CHECK_ERROR(_readInteger(c, &asset_config->params.total))
             available_params[IDX_CONFIG_TOTAL_UNITS] = IDX_CONFIG_TOTAL_UNITS;
             continue;
         }
 
-        if (strncmp((char*)key, KEY_APARAMS_DEF_FROZEN, strlen(KEY_APARAMS_DEF_FROZEN)) == 0) {
+        if (strncmp((char *)key, KEY_APARAMS_DEF_FROZEN, strlen(KEY_APARAMS_DEF_FROZEN)) == 0) {
             CHECK_ERROR(_readBool(c, &asset_config->params.default_frozen))
             available_params[IDX_CONFIG_FROZEN] = IDX_CONFIG_FROZEN;
             continue;
         }
 
-        if (strncmp((char*)key, KEY_APARAMS_UNIT_NAME, strlen(KEY_APARAMS_UNIT_NAME)) == 0) {
+        if (strncmp((char *)key, KEY_APARAMS_UNIT_NAME, strlen(KEY_APARAMS_UNIT_NAME)) == 0) {
             memset(asset_config->params.unitname, 0, sizeof(asset_config->params.unitname));
-            CHECK_ERROR(_readString(c, (uint8_t*)asset_config->params.unitname, sizeof(asset_config->params.unitname)))
+            CHECK_ERROR(_readString(c, (uint8_t *)asset_config->params.unitname, sizeof(asset_config->params.unitname)))
             available_params[IDX_CONFIG_UNIT_NAME] = IDX_CONFIG_UNIT_NAME;
             continue;
         }
 
-        if (strncmp((char*)key, KEY_APARAMS_DECIMALS, strlen(KEY_APARAMS_DECIMALS)) == 0) {
+        if (strncmp((char *)key, KEY_APARAMS_DECIMALS, strlen(KEY_APARAMS_DECIMALS)) == 0) {
             CHECK_ERROR(_readInteger(c, &asset_config->params.decimals))
             available_params[IDX_CONFIG_DECIMALS] = IDX_CONFIG_DECIMALS;
             continue;
         }
 
-        if (strncmp((char*)key, KEY_APARAMS_ASSET_NAME, strlen(KEY_APARAMS_ASSET_NAME)) == 0) {
+        if (strncmp((char *)key, KEY_APARAMS_ASSET_NAME, strlen(KEY_APARAMS_ASSET_NAME)) == 0) {
             memset(asset_config->params.assetname, 0, sizeof(asset_config->params.assetname));
-            CHECK_ERROR(_readString(c, (uint8_t*)asset_config->params.assetname, sizeof(asset_config->params.assetname)))
+            CHECK_ERROR(
+                _readString(c, (uint8_t *)asset_config->params.assetname, sizeof(asset_config->params.assetname)))
             available_params[IDX_CONFIG_ASSET_NAME] = IDX_CONFIG_ASSET_NAME;
             continue;
         }
 
-        if (strncmp((char*)key, KEY_APARAMS_URL, strlen(KEY_APARAMS_URL)) == 0) {
+        if (strncmp((char *)key, KEY_APARAMS_URL, strlen(KEY_APARAMS_URL)) == 0) {
             memset(asset_config->params.url, 0, sizeof(asset_config->params.url));
-            CHECK_ERROR(_readString(c, (uint8_t*)asset_config->params.url, sizeof(asset_config->params.url)))
+            CHECK_ERROR(_readString(c, (uint8_t *)asset_config->params.url, sizeof(asset_config->params.url)))
             available_params[IDX_CONFIG_URL] = IDX_CONFIG_URL;
             continue;
         }
 
-        if (strncmp((char*)key, KEY_APARAMS_METADATA_HASH, strlen(KEY_APARAMS_METADATA_HASH)) == 0) {
-            CHECK_ERROR(_readBinFixed(c, asset_config->params.metadata_hash, sizeof(asset_config->params.metadata_hash)))
+        if (strncmp((char *)key, KEY_APARAMS_METADATA_HASH, strlen(KEY_APARAMS_METADATA_HASH)) == 0) {
+            CHECK_ERROR(
+                _readBinFixed(c, asset_config->params.metadata_hash, sizeof(asset_config->params.metadata_hash)))
             available_params[IDX_CONFIG_METADATA_HASH] = IDX_CONFIG_METADATA_HASH;
             continue;
         }
 
-        if (strncmp((char*)key, KEY_APARAMS_MANAGER, strlen(KEY_APARAMS_MANAGER)) == 0) {
+        if (strncmp((char *)key, KEY_APARAMS_MANAGER, strlen(KEY_APARAMS_MANAGER)) == 0) {
             CHECK_ERROR(_readBinFixed(c, asset_config->params.manager, sizeof(asset_config->params.manager)))
             available_params[IDX_CONFIG_MANAGER] = IDX_CONFIG_MANAGER;
             continue;
         }
 
-        if (strncmp((char*)key, KEY_APARAMS_RESERVE, strlen(KEY_APARAMS_RESERVE)) == 0) {
+        if (strncmp((char *)key, KEY_APARAMS_RESERVE, strlen(KEY_APARAMS_RESERVE)) == 0) {
             CHECK_ERROR(_readBinFixed(c, asset_config->params.reserve, sizeof(asset_config->params.reserve)))
             available_params[IDX_CONFIG_RESERVE] = IDX_CONFIG_RESERVE;
             continue;
         }
 
-        if (strncmp((char*)key, KEY_APARAMS_FREEZE, strlen(KEY_APARAMS_FREEZE)) == 0) {
+        if (strncmp((char *)key, KEY_APARAMS_FREEZE, strlen(KEY_APARAMS_FREEZE)) == 0) {
             CHECK_ERROR(_readBinFixed(c, asset_config->params.freeze, sizeof(asset_config->params.freeze)))
             available_params[IDX_CONFIG_FREEZER] = IDX_CONFIG_FREEZER;
             continue;
         }
 
-        if (strncmp((char*)key, KEY_APARAMS_CLAWBACK, strlen(KEY_APARAMS_CLAWBACK)) == 0) {
+        if (strncmp((char *)key, KEY_APARAMS_CLAWBACK, strlen(KEY_APARAMS_CLAWBACK)) == 0) {
             CHECK_ERROR(_readBinFixed(c, asset_config->params.clawback, sizeof(asset_config->params.clawback)))
             available_params[IDX_CONFIG_CLAWBACK] = IDX_CONFIG_CLAWBACK;
             continue;
         }
     }
 
-    for(uint8_t i = 0; i < MAX_PARAM_SIZE; i++) {
-        switch (available_params[i])
-        {
+    for (uint8_t i = 0; i < MAX_PARAM_SIZE; i++) {
+        switch (available_params[i]) {
         case IDX_CONFIG_ASSET_ID:
             DISPLAY_ITEM(IDX_CONFIG_ASSET_ID, 1, tx_num_items)
             break;
@@ -726,28 +717,30 @@ parser_error_t _verifyAppArgs(parser_context_t *c, uint16_t args_len[], uint8_t 
     return parser_ok;
 }
 
-parser_error_t _getAppArg(parser_context_t *c, uint8_t **args, uint16_t* args_len, uint8_t args_idx, uint16_t max_args_len, uint8_t max_array_len)
+parser_error_t _getAppArg(parser_context_t *c, uint8_t **args, uint16_t *args_len, uint8_t args_idx,
+                          uint16_t max_args_len, uint8_t max_array_len)
 {
     uint8_t tmp_array_len = 0;
     CHECK_ERROR(_findKey(c, KEY_APP_ARGS))
     CHECK_ERROR(_readArraySize(c, &tmp_array_len))
 
-    if(tmp_array_len > max_array_len || args_idx >= tmp_array_len) {
+    if (tmp_array_len > max_array_len || args_idx >= tmp_array_len) {
         return parser_unexpected_number_items;
     }
 
-    for(uint8_t i = 0; i < args_idx + 1; i++) {
+    for (uint8_t i = 0; i < args_idx + 1; i++) {
         CHECK_ERROR(_verifyBin(c, args_len, max_args_len))
     }
 
     if (c->offset < *args_len) {
         return parser_unexpected_value;
     }
-    (*args) = (uint8_t*)(c->buffer + c->offset - *args_len);
+    (*args) = (uint8_t *)(c->buffer + c->offset - *args_len);
     return parser_ok;
 }
 
-parser_error_t _readAppArgs(parser_context_t *c, uint8_t args[][MAX_ARGLEN], size_t args_len[], size_t *argsSize, size_t maxArgs)
+parser_error_t _readAppArgs(parser_context_t *c, uint8_t args[][MAX_ARGLEN], size_t args_len[], size_t *argsSize,
+                            size_t maxArgs)
 {
     uint8_t tmpFIX = 0;
     CHECK_ERROR(_readArraySize(c, &tmpFIX))
@@ -758,7 +751,7 @@ parser_error_t _readAppArgs(parser_context_t *c, uint8_t args[][MAX_ARGLEN], siz
     }
 
     for (size_t i = 0; i < *argsSize; i++) {
-        CHECK_ERROR(_readBin(c, args[i], (uint16_t*)&args_len[i], MAX_ARGLEN))
+        CHECK_ERROR(_readBin(c, args[i], (uint16_t *)&args_len[i], MAX_ARGLEN))
     }
 
     return parser_ok;
@@ -773,12 +766,12 @@ parser_error_t _readAccountsSize(parser_context_t *c, uint8_t *numAccounts, uint
     return parser_ok;
 }
 
-parser_error_t _getAccount(parser_context_t *c, uint8_t* account, uint8_t account_idx, uint8_t num_accounts)
+parser_error_t _getAccount(parser_context_t *c, uint8_t *account, uint8_t account_idx, uint8_t num_accounts)
 {
     uint8_t tmp_num_accounts = 0;
     CHECK_ERROR(_findKey(c, KEY_APP_ACCOUNTS))
     CHECK_ERROR(_readAccountsSize(c, &tmp_num_accounts, num_accounts))
-    if(tmp_num_accounts != num_accounts || account_idx >= num_accounts) {
+    if (tmp_num_accounts != num_accounts || account_idx >= num_accounts) {
         return parser_unexpected_number_items;
     }
     // Read until we get the right account index
@@ -788,7 +781,7 @@ parser_error_t _getAccount(parser_context_t *c, uint8_t* account, uint8_t accoun
     return parser_ok;
 }
 
-parser_error_t _verifyAccounts(parser_context_t *c, uint8_t* num_accounts, uint8_t maxNumAccounts)
+parser_error_t _verifyAccounts(parser_context_t *c, uint8_t *num_accounts, uint8_t maxNumAccounts)
 {
     uint8_t tmpBuf[ACCT_SIZE] = {0};
     CHECK_ERROR(_readAccountsSize(c, num_accounts, maxNumAccounts))
@@ -805,9 +798,9 @@ parser_error_t _readStateSchema(parser_context_t *c, state_schema *schema)
     uint8_t key[32];
     for (uint16_t i = 0; i < mapSize; i++) {
         CHECK_ERROR(_readString(c, key, sizeof(key)))
-        if (strncmp((char*)key, KEY_SCHEMA_NUI, sizeof(KEY_SCHEMA_NUI)) == 0) {
+        if (strncmp((char *)key, KEY_SCHEMA_NUI, sizeof(KEY_SCHEMA_NUI)) == 0) {
             CHECK_ERROR(_readInteger(c, &schema->num_uint))
-        } else if (strncmp((char*)key, KEY_SCHEMA_NBS, sizeof(KEY_SCHEMA_NBS)) == 0) {
+        } else if (strncmp((char *)key, KEY_SCHEMA_NBS, sizeof(KEY_SCHEMA_NBS)) == 0) {
             CHECK_ERROR(_readInteger(c, &schema->num_byteslice))
         } else {
             return parser_msgpack_unexpected_key;
@@ -829,8 +822,8 @@ parser_error_t _readArrayU64(parser_context_t *c, uint64_t elements[], uint8_t *
     return parser_ok;
 }
 
-__Z_INLINE parser_error_t _readBoxElement(parser_context_t *c, box *box) {
-
+__Z_INLINE parser_error_t _readBoxElement(parser_context_t *c, box *box)
+{
     uint8_t key[2] = {0};
     uint16_t mapSize = 0;
     CHECK_ERROR(_readMapSize(c, &mapSize))
@@ -840,10 +833,10 @@ __Z_INLINE parser_error_t _readBoxElement(parser_context_t *c, box *box) {
 
     for (uint16_t index = 0; index < mapSize; index++) {
         CHECK_ERROR(_readString(c, key, sizeof(key)))
-        if (strncmp((char*)key, KEY_APP_BOX_INDEX, sizeof(KEY_APP_BOX_INDEX)) == 0) {
+        if (strncmp((char *)key, KEY_APP_BOX_INDEX, sizeof(KEY_APP_BOX_INDEX)) == 0) {
             CHECK_ERROR(_readUInt8(c, &box->i))
 
-        } else if (strncmp((char*)key, KEY_APP_BOX_NAME, sizeof(KEY_APP_BOX_NAME)) == 0) {
+        } else if (strncmp((char *)key, KEY_APP_BOX_NAME, sizeof(KEY_APP_BOX_NAME)) == 0) {
             CHECK_ERROR(_getPointerBin(c, &box->n, &box->n_len))
 
             if (box->n_len > BOX_NAME_MAX_LENGTH) {
@@ -875,7 +868,7 @@ static parser_error_t _readTxType(parser_context_t *c, parser_tx_t *v)
 {
     char typeStr[10] = {0};
     CHECK_ERROR(_findKey(c, KEY_COMMON_TYPE))
-    CHECK_ERROR(_readString(c, (uint8_t*) typeStr, sizeof(typeStr)))
+    CHECK_ERROR(_readString(c, (uint8_t *)typeStr, sizeof(typeStr)))
 
     if (strncmp(typeStr, KEY_TX_PAY, sizeof(KEY_TX_PAY)) == 0) {
         v->type = TX_PAYMENT;
@@ -924,7 +917,7 @@ static parser_error_t _readTxCommonParams(parser_context_t *c, parser_tx_t *v)
     DISPLAY_ITEM(IDX_COMMON_FEE, 1, common_num_items)
 
     if (_findKey(c, KEY_COMMON_GEN_ID) == parser_ok) {
-        CHECK_ERROR(_readString(c, (uint8_t*)v->genesisID, sizeof(v->genesisID)))
+        CHECK_ERROR(_readString(c, (uint8_t *)v->genesisID, sizeof(v->genesisID)))
         DISPLAY_ITEM(IDX_COMMON_GEN_ID, 1, common_num_items)
     }
 
@@ -939,7 +932,7 @@ static parser_error_t _readTxCommonParams(parser_context_t *c, parser_tx_t *v)
 
     if (_findKey(c, KEY_COMMON_NOTE) == parser_ok) {
         CHECK_ERROR(_readBinSize(c, &v->note_len))
-        if(v->note_len > MAX_NOTE_LEN) {
+        if (v->note_len > MAX_NOTE_LEN) {
             return parser_unexpected_value;
         }
         DISPLAY_ITEM(IDX_COMMON_NOTE, 1, common_num_items)
@@ -955,8 +948,10 @@ static parser_error_t _readTxCommonParams(parser_context_t *c, parser_tx_t *v)
     return parser_ok;
 }
 
-static parser_error_t _verifyValue(parser_context_t *c) {
-    if (c == NULL) return parser_unexpected_error;
+static parser_error_t _verifyValue(parser_context_t *c)
+{
+    if (c == NULL)
+        return parser_unexpected_error;
 
     CHECK_APP_CANARY()
 
@@ -1015,7 +1010,8 @@ static parser_error_t _verifyValue(parser_context_t *c) {
 
     return parser_ok;
 }
-parser_error_t _findKey(parser_context_t *c, const char *key) {
+parser_error_t _findKey(parser_context_t *c, const char *key)
+{
     uint8_t tmpKey[20] = {0};
 
     // Process buffer from start
@@ -1024,7 +1020,7 @@ parser_error_t _findKey(parser_context_t *c, const char *key) {
     CHECK_ERROR(_readMapSize(c, &keysLen))
     for (uint16_t i = 0; i < keysLen; i++) {
         CHECK_ERROR(_readString(c, tmpKey, sizeof(tmpKey)))
-        if (strncmp((char*)tmpKey, key, strlen(key)) == 0) {
+        if (strncmp((char *)tmpKey, key, strlen(key)) == 0) {
             return parser_ok;
         }
         CHECK_ERROR(_verifyValue(c))
@@ -1208,7 +1204,8 @@ static parser_error_t _readTxApplication(parser_context_t *c, parser_tx_t *v)
         DISPLAY_ITEM(IDX_ACCOUNTS, application->num_accounts, tx_num_items)
     }
 
-    if(application->num_accounts + application->num_foreign_apps + application->num_foreign_assets > ACCT_FOREIGN_LIMIT) {
+    if (application->num_accounts + application->num_foreign_apps + application->num_foreign_assets >
+        ACCT_FOREIGN_LIMIT) {
         return parser_unexpected_number_items;
     }
 
@@ -1218,9 +1215,9 @@ static parser_error_t _readTxApplication(parser_context_t *c, parser_tx_t *v)
     }
 
     uint16_t app_args_total_len = 0;
-    for(uint8_t i = 0; i< application->num_app_args; i++) {
+    for (uint8_t i = 0; i < application->num_app_args; i++) {
         app_args_total_len += application->app_args_len[i];
-        if(app_args_total_len > MAX_ARGLEN) {
+        if (app_args_total_len > MAX_ARGLEN) {
             return parser_unexpected_number_items;
         }
     }
@@ -1237,7 +1234,7 @@ static parser_error_t _readTxApplication(parser_context_t *c, parser_tx_t *v)
 
     if (_findKey(c, KEY_APP_EXTRA_PAGES) == parser_ok) {
         CHECK_ERROR(_readUInt8(c, &application->extra_pages))
-        if (application->extra_pages > 3){
+        if (application->extra_pages > 3) {
             return parser_too_many_extra_pages;
         }
         DISPLAY_ITEM(IDX_EXTRA_PAGES, 1, tx_num_items)
@@ -1248,12 +1245,13 @@ static parser_error_t _readTxApplication(parser_context_t *c, parser_tx_t *v)
         DISPLAY_ITEM(IDX_APPROVE, 1, tx_num_items)
     }
 
-   if (_findKey(c, KEY_APP_CPROG_LEN) == parser_ok) {
-       CHECK_ERROR(_getPointerBin(c, &application->cprog, &application->cprog_len))
-       DISPLAY_ITEM(IDX_CLEAR, 1, tx_num_items)
-   }
+    if (_findKey(c, KEY_APP_CPROG_LEN) == parser_ok) {
+        CHECK_ERROR(_getPointerBin(c, &application->cprog, &application->cprog_len))
+        DISPLAY_ITEM(IDX_CLEAR, 1, tx_num_items)
+    }
 
-    if (application->id == 0 && application->cprog_len + application->aprog_len > PAGE_LEN *(1+application->extra_pages)){
+    if (application->id == 0 &&
+        application->cprog_len + application->aprog_len > PAGE_LEN * (1 + application->extra_pages)) {
         // ExtraPages needs to be checked only on application creation
         return parser_program_fields_too_long;
     }
@@ -1267,7 +1265,7 @@ parser_error_t _read(parser_context_t *c, parser_tx_t *v)
     CHECK_ERROR(initializeItemArray())
 
     CHECK_ERROR(_readMapSize(c, &keyLen))
-    if(keyLen > UINT8_MAX) {
+    if (keyLen > UINT8_MAX) {
         return parser_unexpected_number_items;
     }
 
@@ -1325,11 +1323,11 @@ static parser_error_t _readSerializedHdPath(parser_context_t *c, parser_arbitrar
 
 parser_error_t _read_arbitrary_data(parser_context_t *c, parser_arbitrary_data_t *v)
 {
-    #if !defined(LEDGER_SPECIFIC)
+#if !defined(LEDGER_SPECIFIC)
     // For cpp_test, the path needs to be read here
     CHECK_ERROR(_readSerializedHdPath(c, v))
-    #endif
-    num_items++; // hdPath, read on process_chunk
+#endif
+    num_items++;  // hdPath, read on process_chunk
     CHECK_ERROR(_readSigner(c, v))
     CHECK_ERROR(_readScope(c))
     CHECK_ERROR(_readEncoding(c))
@@ -1344,14 +1342,13 @@ static parser_error_t _readSigner(parser_context_t *c, parser_arbitrary_data_t *
 {
     v->signerBuffer = c->buffer + c->offset;
 
-    
     uint8_t raw_pubkey[PK_LEN_25519];
-    #if defined(LEDGER_SPECIFIC)
+#if defined(LEDGER_SPECIFIC)
     zxerr_t err = crypto_extractPublicKey(raw_pubkey, PK_LEN_25519);
     if (err != zxerr_ok) {
         return parser_invalid_signer;
     }
-    #else
+#else
     // in cpp_test we cannot compute the pubkey from the hdPath
     const char *pubkeyAcc0 = "1eccfd1ec05e4125fae690cec2a77839a9a36235dd6e2eafba79ca25c0da60f8";
     const char *pubkeyAcc123 = "0dfdbcdb8eebed628cfb4ef70207b86fd0deddca78e90e8c59d6f441e383b377";
@@ -1361,7 +1358,7 @@ static parser_error_t _readSigner(parser_context_t *c, parser_arbitrary_data_t *
     } else {
         hexstr_to_array(raw_pubkey, PK_LEN_25519, pubkeyAcc123, strlen(pubkeyAcc123));
     }
-    #endif
+#endif
 
     if (memcmp(raw_pubkey, v->signerBuffer, PK_LEN_25519) != 0) {
         return parser_invalid_signer;
@@ -1378,7 +1375,7 @@ static parser_error_t _readScope(parser_context_t *c)
 {
     uint8_t scope = 0;
     CHECK_ERROR(_readUInt8(c, &scope))
-    
+
     if (scope != SCOPE_AUTH) {
         return parser_invalid_scope;
     }
@@ -1390,7 +1387,7 @@ static parser_error_t _readEncoding(parser_context_t *c)
 {
     uint8_t encoding = 0;
     CHECK_ERROR(_readUInt8(c, &encoding))
-    
+
     if (encoding != ENCODING_BASE64) {
         return parser_invalid_encoding;
     }
@@ -1401,14 +1398,14 @@ static parser_error_t _readEncoding(parser_context_t *c)
 static parser_error_t _readData(parser_context_t *c, parser_arbitrary_data_t *v)
 {
     size_t dataLen = 0;
-    CHECK_ERROR(_readUInt16(c, (uint16_t*)&dataLen))
+    CHECK_ERROR(_readUInt16(c, (uint16_t *)&dataLen))
     v->dataLen = dataLen;
     v->dataBuffer = c->buffer + c->offset;
 
-    CHECK_ERROR(parser_json_parse((const char*)c->buffer + c->offset, dataLen, c, &num_json_items))
+    CHECK_ERROR(parser_json_parse((const char *)c->buffer + c->offset, dataLen, c, &num_json_items))
     num_items += num_json_items;
 
-    CHECK_ERROR(parser_json_check_canonical((const char*)v->dataBuffer, v->dataLen))
+    CHECK_ERROR(parser_json_check_canonical((const char *)v->dataBuffer, v->dataLen))
 
     return parser_ok;
 }
@@ -1468,7 +1465,7 @@ static parser_error_t _readRequestId(parser_context_t *c, parser_arbitrary_data_
 static parser_error_t _readAuthData(parser_context_t *c, parser_arbitrary_data_t *v)
 {
     size_t authDataLen = 0;
-    CHECK_ERROR(_readUInt16(c, (uint16_t*)&authDataLen))
+    CHECK_ERROR(_readUInt16(c, (uint16_t *)&authDataLen))
     uint32_t startOffset = c->offset;
     v->authDataLen = (uint16_t)authDataLen;
 
@@ -1498,7 +1495,7 @@ static parser_error_t _readAuthData(parser_context_t *c, parser_arbitrary_data_t
     // read flags
     flags_t flags;
     MEMZERO(&flags, sizeof(flags_t));
-    CHECK_ERROR(_readUInt8(c, (uint8_t*)&flags))
+    CHECK_ERROR(_readUInt8(c, (uint8_t *)&flags))
 
     // read signCount
     uint32_t signCount;
@@ -1529,7 +1526,7 @@ static parser_error_t _readAuthData(parser_context_t *c, parser_arbitrary_data_t
         if (!credential_public_key.found_alg) {
             return parser_failed_domain_auth;
         }
-        
+
         const uint8_t *next_byte = cbor_value_get_next_byte(&value);
         size_t bytesConsumed = 0;
 
@@ -1538,7 +1535,7 @@ static parser_error_t _readAuthData(parser_context_t *c, parser_arbitrary_data_t
         }
 
         bytesConsumed = next_byte - (c->buffer + c->offset);
-            
+
         // Advance the parser as many bytes as were consumed by the CBOR parser
         CTX_CHECK_AND_ADVANCE(c, bytesConsumed)
     }
@@ -1550,13 +1547,13 @@ static parser_error_t _readAuthData(parser_context_t *c, parser_arbitrary_data_t
 
         const uint8_t *next_byte = cbor_value_get_next_byte(&value);
         size_t bytesConsumed = 0;
-        
+
         if (next_byte < (c->buffer + c->offset)) {
             return parser_failed_domain_auth;
         }
 
         bytesConsumed = next_byte - (c->buffer + c->offset);
-            
+
         // Advance the parser as many bytes as were consumed by the CBOR parser
         CTX_CHECK_AND_ADVANCE(c, bytesConsumed)
     }
@@ -1570,11 +1567,12 @@ static parser_error_t _readAuthData(parser_context_t *c, parser_arbitrary_data_t
     return parser_ok;
 }
 
-static parser_error_t checkCredentialPublicKeyItem(cbor_value_t *key, cbor_value_t *value) {
+static parser_error_t checkCredentialPublicKeyItem(cbor_value_t *key, cbor_value_t *value)
+{
     if (cbor_value_is_integer(key)) {
         int keyValue = 0;
         CHECK_ERROR(cbor_value_get_int(key, &keyValue))
-        
+
         if (keyValue == KEY_VALUE_CRV) {
             int valueValue = 0;
             if (cbor_value_is_text_string(value) || cbor_value_is_byte_string(value)) {
@@ -1611,121 +1609,122 @@ static parser_error_t checkCredentialPublicKeyItem(cbor_value_t *key, cbor_value
             }
             // Check if the algorithm value is a valid CoseAlgorithm_e
             switch (valueValue) {
-                case UNASSIGNED_MINUS_65536:
-                case RS1:
-                case A128CTR:
-                case A192CTR:
-                case A256CTR:
-                case A128CBC:
-                case A192CBC:
-                case A256CBC:
-                case KT256:
-                case KT128:
-                case TURBOSHAKE256:
-                case TURBOSHAKE128:
-                case WALNUTDSA:
-                case RS512:
-                case RS384:
-                case RS256:
-                case ML_DSA_87:
-                case ML_DSA_65:
-                case ML_DSA_44:
-                case ES256K:
-                case HSS_LMS:
-                case SHAKE256:
-                case SHA_512:
-                case SHA_384:
-                case RSAES_OAEP_W_SHA_512:
-                case RSAES_OAEP_W_SHA_256:
-                case RSAES_OAEP_W_RFC_8017_DEFAULT_PARAMETERS:
-                case PS512:
-                case PS384:
-                case PS256:
-                case ECDH_SS_A256KW:
-                case ECDH_SS_A192KW:
-                case ECDH_SS_A128KW:
-                case ECDH_ES_A256KW:
-                case ECDH_ES_A192KW:
-                case ECDH_ES_A128KW:
-                case ECDH_SS_HKDF_512:
-                case ECDH_SS_HKDF_256:
-                case ECDH_ES_HKDF_512:
-                case ECDH_ES_HKDF_256:
-                case SHAKE128:
-                case SHA_512_256:
-                case SHA_256:
-                case SHA_256_64:
-                case SHA_1:
-                case DIRECT_HKDF_AES_256:
-                case DIRECT_HKDF_AES_128:
-                case DIRECT_HKDF_SHA_512:
-                case DIRECT_HKDF_SHA_256:
-                case DIRECT:
-                case A256KW:
-                case A192KW:
-                case A128KW:
-                case A128GCM:
-                case A192GCM:
-                case A256GCM:
-                case HMAC_256_64:
-                case HMAC_256_256:
-                case HMAC_384_384:
-                case HMAC_512_512:
-                case AES_CCM_16_64_128:
-                case AES_CCM_16_64_256:
-                case AES_CCM_64_64_128:
-                case AES_CCM_64_64_256:
-                case AES_MAC_128_64:
-                case AES_MAC_256_64:
-                case CHACHA20_POLY1305:
-                case AES_MAC_128_128:
-                case AES_MAC_256_128:
-                case AES_CCM_16_128_128:
-                case AES_CCM_16_128_256:
-                case AES_CCM_64_128_128:
-                case AES_CCM_64_128_256:
-                case IV_GENERATION:
-                    credential_public_key.found_alg = true;
-                    credential_public_key.alg = valueValue;
-                    break;
-                case ES256:
-                case ES384:
-                case ES512:
-                    // Value of "kty" must be "2" (EC2)
-                    // RFC8152 - Section 8.1 : https://datatracker.ietf.org/doc/html/rfc8152#section-8.1
-                    if (credential_public_key.kty != 2) {
-                        return parser_failed_domain_auth;
-                    }
-                    credential_public_key.found_alg = true;
-                    credential_public_key.alg = valueValue;
-                    break;
-                case EDDSA:
-                    // Value of "kty" must be "1" (OKP)
-                    // RFC8152 - Section 8.2 : https://datatracker.ietf.org/doc/html/rfc8152#section-8.2
-                    if (credential_public_key.kty != 1) {
-                        return parser_failed_domain_auth;
-                    }
-                    // Value of "crv" must be a valid curve (Table 22 )
-                    // RFC8152 - Section 8.2 : https://datatracker.ietf.org/doc/html/rfc8152#section-8.2
-                    if (!credential_public_key.found_crv) {
-                        return parser_failed_domain_auth;
-                    }
-                    if (credential_public_key.crv != CRV_ED25519 && credential_public_key.crv != CRV_ED448) {
-                        return parser_failed_domain_auth;
-                    }
-                    credential_public_key.found_alg = true;
-                    credential_public_key.alg = valueValue;
+            case UNASSIGNED_MINUS_65536:
+            case RS1:
+            case A128CTR:
+            case A192CTR:
+            case A256CTR:
+            case A128CBC:
+            case A192CBC:
+            case A256CBC:
+            case KT256:
+            case KT128:
+            case TURBOSHAKE256:
+            case TURBOSHAKE128:
+            case WALNUTDSA:
+            case RS512:
+            case RS384:
+            case RS256:
+            case ML_DSA_87:
+            case ML_DSA_65:
+            case ML_DSA_44:
+            case ES256K:
+            case HSS_LMS:
+            case SHAKE256:
+            case SHA_512:
+            case SHA_384:
+            case RSAES_OAEP_W_SHA_512:
+            case RSAES_OAEP_W_SHA_256:
+            case RSAES_OAEP_W_RFC_8017_DEFAULT_PARAMETERS:
+            case PS512:
+            case PS384:
+            case PS256:
+            case ECDH_SS_A256KW:
+            case ECDH_SS_A192KW:
+            case ECDH_SS_A128KW:
+            case ECDH_ES_A256KW:
+            case ECDH_ES_A192KW:
+            case ECDH_ES_A128KW:
+            case ECDH_SS_HKDF_512:
+            case ECDH_SS_HKDF_256:
+            case ECDH_ES_HKDF_512:
+            case ECDH_ES_HKDF_256:
+            case SHAKE128:
+            case SHA_512_256:
+            case SHA_256:
+            case SHA_256_64:
+            case SHA_1:
+            case DIRECT_HKDF_AES_256:
+            case DIRECT_HKDF_AES_128:
+            case DIRECT_HKDF_SHA_512:
+            case DIRECT_HKDF_SHA_256:
+            case DIRECT:
+            case A256KW:
+            case A192KW:
+            case A128KW:
+            case A128GCM:
+            case A192GCM:
+            case A256GCM:
+            case HMAC_256_64:
+            case HMAC_256_256:
+            case HMAC_384_384:
+            case HMAC_512_512:
+            case AES_CCM_16_64_128:
+            case AES_CCM_16_64_256:
+            case AES_CCM_64_64_128:
+            case AES_CCM_64_64_256:
+            case AES_MAC_128_64:
+            case AES_MAC_256_64:
+            case CHACHA20_POLY1305:
+            case AES_MAC_128_128:
+            case AES_MAC_256_128:
+            case AES_CCM_16_128_128:
+            case AES_CCM_16_128_256:
+            case AES_CCM_64_128_128:
+            case AES_CCM_64_128_256:
+            case IV_GENERATION:
+                credential_public_key.found_alg = true;
+                credential_public_key.alg = valueValue;
                 break;
-                default:
+            case ES256:
+            case ES384:
+            case ES512:
+                // Value of "kty" must be "2" (EC2)
+                // RFC8152 - Section 8.1 : https://datatracker.ietf.org/doc/html/rfc8152#section-8.1
+                if (credential_public_key.kty != 2) {
                     return parser_failed_domain_auth;
+                }
+                credential_public_key.found_alg = true;
+                credential_public_key.alg = valueValue;
+                break;
+            case EDDSA:
+                // Value of "kty" must be "1" (OKP)
+                // RFC8152 - Section 8.2 : https://datatracker.ietf.org/doc/html/rfc8152#section-8.2
+                if (credential_public_key.kty != 1) {
+                    return parser_failed_domain_auth;
+                }
+                // Value of "crv" must be a valid curve (Table 22 )
+                // RFC8152 - Section 8.2 : https://datatracker.ietf.org/doc/html/rfc8152#section-8.2
+                if (!credential_public_key.found_crv) {
+                    return parser_failed_domain_auth;
+                }
+                if (credential_public_key.crv != CRV_ED25519 && credential_public_key.crv != CRV_ED448) {
+                    return parser_failed_domain_auth;
+                }
+                credential_public_key.found_alg = true;
+                credential_public_key.alg = valueValue;
+                break;
+            default:
+                return parser_failed_domain_auth;
             }
         }
-    
+
         // Key is "key_ops"
         else if (keyValue == KEY_VALUE_KEY_OPS) {
             // Value is an array and must contain "sign" and "verify" when using ECDSA
             // RFC8152 - Section 8.1 : https://datatracker.ietf.org/doc/html/rfc8152#section-8.1
-            if (credential_public_key.alg == ES256 || credential_public_key.alg == ES384 || credential_public_key.alg == ES512 || credential_public_key.alg == EDDSA) {
+            if (credential_public_key.alg == ES256 || credential_public_key.alg == ES384 ||
+                credential_public_key.alg == ES512 || credential_public_key.alg == EDDSA) {
                 int values[30];
                 size_t count = 0;
                 bool found_sign = false;
@@ -1752,7 +1751,8 @@ static parser_error_t checkCredentialPublicKeyItem(cbor_value_t *key, cbor_value
     return parser_ok;
 }
 
-static parser_error_t checkExtensionsItem(cbor_value_t *key, __Z_UNUSED cbor_value_t *value) {
+static parser_error_t checkExtensionsItem(cbor_value_t *key, __Z_UNUSED cbor_value_t *value)
+{
     if (key->type != CborTextStringType) {
         return parser_failed_domain_auth;
     }
@@ -1779,201 +1779,208 @@ uint8_t _getNumJsonItems()
     return num_json_items;
 }
 
-uint16_t parser_mapParserErrorToSW(parser_error_t err) {
+uint16_t parser_mapParserErrorToSW(parser_error_t err)
+{
     switch (err) {
-        case parser_invalid_scope:
-            return APDU_CODE_INVALID_SCOPE;
-        case parser_failed_decoding:
-            return APDU_CODE_FAILED_DECODING;
-        case parser_invalid_signer:
-            return APDU_CODE_INVALID_SIGNER;
-        case parser_missing_domain:
-            return APDU_CODE_MISSING_DOMAIN;
-        case parser_missing_authenticated_data:
-            return APDU_CODE_MISSING_AUTHENTICATED_DATA;
-        case parser_bad_json:
-            return APDU_CODE_BAD_JSON;
-        case parser_failed_domain_auth:
-            return APDU_CODE_FAILED_DOMAIN_AUTH;
-        case parser_failed_hd_path:
-            return APDU_CODE_FAILED_HD_PATH;
-        default:
-            return APDU_CODE_DATA_INVALID;
+    case parser_invalid_scope:
+        return APDU_CODE_INVALID_SCOPE;
+    case parser_failed_decoding:
+        return APDU_CODE_FAILED_DECODING;
+    case parser_invalid_signer:
+        return APDU_CODE_INVALID_SIGNER;
+    case parser_missing_domain:
+        return APDU_CODE_MISSING_DOMAIN;
+    case parser_missing_authenticated_data:
+        return APDU_CODE_MISSING_AUTHENTICATED_DATA;
+    case parser_bad_json:
+        return APDU_CODE_BAD_JSON;
+    case parser_failed_domain_auth:
+        return APDU_CODE_FAILED_DOMAIN_AUTH;
+    case parser_failed_hd_path:
+        return APDU_CODE_FAILED_HD_PATH;
+    default:
+        return APDU_CODE_DATA_INVALID;
     }
 }
 
-const char *parser_getErrorDescription(parser_error_t err) {
+const char *parser_getErrorDescription(parser_error_t err)
+{
     switch (err) {
-        case parser_ok:
-            return "No error";
-        case parser_no_data:
-            return "No more data";
-        case parser_init_context_empty:
-            return "Initialized empty context";
-        case parser_unexpected_buffer_end:
-            return "Unexpected buffer end";
-        case parser_unexpected_version:
-            return "Unexpected version";
-        case parser_unexpected_characters:
-            return "Unexpected characters";
-        case parser_unexpected_field:
-            return "Unexpected field";
-        case parser_duplicated_field:
-            return "Unexpected duplicated field";
-        case parser_value_out_of_range:
-            return "Value out of range";
-        case parser_unexpected_chain:
-            return "Unexpected chain";
-        case parser_query_no_results:
-            return "item query returned no results";
-        case parser_missing_field:
-            return "missing field";
-//////
-        case parser_display_idx_out_of_range:
-            return "display index out of range";
-        case parser_display_page_out_of_range:
-            return "display page out of range";
-        case parser_unexpected_error:
-            return "Unexpected error in parser";
-        case parser_unexpected_type:
-            return "Unexpected type";
-        case parser_unexpected_method:
-            return "Unexpected method";
-        case parser_unexpected_value:
-            return "Unexpected value";
-        case parser_unexpected_number_items:
-            return "Unexpected number of items";
-        case parser_invalid_address:
-            return "Invalid address";
-        case parser_program_fields_too_long:
-            return "Clear/Apprv programs too long";
-        case parser_too_many_extra_pages:
-            return "Too many extra pages";
-        case parser_buffer_too_small:
-            return "Buffer too small";
-        case parser_unknown_transaction:
-            return "Unknown transaction";
-        case parser_key_not_found:
-            return "Key not found";
-        case parser_msgpack_unexpected_type:
-            return "Msgpack unexpected type";
-        case parser_msgpack_unexpected_key:
-            return "Msgpack unexpected key";
-        case parser_msgpack_map_type_expected:
-            return "Msgpack map tye expected";
-        case parser_msgpack_map_type_not_supported:
-            return "Msgpack map type not suported";
-        case parser_msgpack_str_type_expected:
-            return "Msgpack str type expected";
-        case parser_msgpack_str_type_not_supported:
-            return "Msgpack str type not supported";
-        case parser_msgpack_str_too_big:
-            return "Msgpack string too big";
-        case parser_msgpack_bin_type_expected:
-            return "msgpack_bin_type_expected";
-        case parser_msgpack_bin_type_not_supported:
-            return "msgpack_bin_type_not_supported";
-        case parser_msgpack_bin_unexpected_size:
-            return "msgpack_bin_unexpected_size";
-        case parser_msgpack_int_type_expected:
-            return "msgpack_int_type_expected";
-        case parser_msgpack_bool_type_expected:
-            return "msgpack_bool_type_expected";
-        case parser_msgpack_array_unexpected_size:
-            return "msgpack_array_unexpected_size";
-        case parser_msgpack_array_too_big:
-            return "msgpack_array_too_big";
-        case parser_msgpack_array_type_expected:
-            return "Msgpack array type expected";
-        case parser_invalid_scope:
-            return "Invalid Scope";
-        case parser_failed_decoding:
-            return "Failed decoding";
-        case parser_invalid_signer:
-            return "Invalid Signer";
-        case parser_missing_domain:
-            return "Missing Domain";
-        case parser_invalid_domain:
-            return "Invalid Domain";
-        case parser_missing_authenticated_data:
-            return "Missing Authentication Data";
-        case parser_bad_json:
-            return "Bad JSON";
-        case parser_failed_domain_auth:
-            return "Failed Domain Auth";
-        case parser_failed_hd_path:
-            return "Failed HD Path";
-        case parser_invalid_request_id:
-            return "Invalid Request ID";
-        case parser_cbor_error_parser_init:
-            return "CBOR parser init error";
-        case parser_cbor_error_invalid_type:
-            return "CBOR invalid type";
-        case parser_cbor_error_map_entry:
-            return "CBOR map entry error";
-        case parser_cbor_error_unexpected:
-            return "CBOR unexpected error";
-        default:
-            return "Unrecognized error code";
+    case parser_ok:
+        return "No error";
+    case parser_no_data:
+        return "No more data";
+    case parser_init_context_empty:
+        return "Initialized empty context";
+    case parser_unexpected_buffer_end:
+        return "Unexpected buffer end";
+    case parser_unexpected_version:
+        return "Unexpected version";
+    case parser_unexpected_characters:
+        return "Unexpected characters";
+    case parser_unexpected_field:
+        return "Unexpected field";
+    case parser_duplicated_field:
+        return "Unexpected duplicated field";
+    case parser_value_out_of_range:
+        return "Value out of range";
+    case parser_unexpected_chain:
+        return "Unexpected chain";
+    case parser_query_no_results:
+        return "item query returned no results";
+    case parser_missing_field:
+        return "missing field";
+        //////
+    case parser_display_idx_out_of_range:
+        return "display index out of range";
+    case parser_display_page_out_of_range:
+        return "display page out of range";
+    case parser_unexpected_error:
+        return "Unexpected error in parser";
+    case parser_unexpected_type:
+        return "Unexpected type";
+    case parser_unexpected_method:
+        return "Unexpected method";
+    case parser_unexpected_value:
+        return "Unexpected value";
+    case parser_unexpected_number_items:
+        return "Unexpected number of items";
+    case parser_invalid_address:
+        return "Invalid address";
+    case parser_program_fields_too_long:
+        return "Clear/Apprv programs too long";
+    case parser_too_many_extra_pages:
+        return "Too many extra pages";
+    case parser_buffer_too_small:
+        return "Buffer too small";
+    case parser_unknown_transaction:
+        return "Unknown transaction";
+    case parser_key_not_found:
+        return "Key not found";
+    case parser_msgpack_unexpected_type:
+        return "Msgpack unexpected type";
+    case parser_msgpack_unexpected_key:
+        return "Msgpack unexpected key";
+    case parser_msgpack_map_type_expected:
+        return "Msgpack map type expected";
+    case parser_msgpack_map_type_not_supported:
+        return "Msgpack map type not supported";
+    case parser_msgpack_str_type_expected:
+        return "Msgpack str type expected";
+    case parser_msgpack_str_type_not_supported:
+        return "Msgpack str type not supported";
+    case parser_msgpack_str_too_big:
+        return "Msgpack string too big";
+    case parser_msgpack_bin_type_expected:
+        return "msgpack_bin_type_expected";
+    case parser_msgpack_bin_type_not_supported:
+        return "msgpack_bin_type_not_supported";
+    case parser_msgpack_bin_unexpected_size:
+        return "msgpack_bin_unexpected_size";
+    case parser_msgpack_int_type_expected:
+        return "msgpack_int_type_expected";
+    case parser_msgpack_bool_type_expected:
+        return "msgpack_bool_type_expected";
+    case parser_msgpack_array_unexpected_size:
+        return "msgpack_array_unexpected_size";
+    case parser_msgpack_array_too_big:
+        return "msgpack_array_too_big";
+    case parser_msgpack_array_type_expected:
+        return "Msgpack array type expected";
+    case parser_invalid_scope:
+        return "Invalid Scope";
+    case parser_failed_decoding:
+        return "Failed decoding";
+    case parser_invalid_signer:
+        return "Invalid Signer";
+    case parser_missing_domain:
+        return "Missing Domain";
+    case parser_invalid_domain:
+        return "Invalid Domain";
+    case parser_missing_authenticated_data:
+        return "Missing Authentication Data";
+    case parser_bad_json:
+        return "Bad JSON";
+    case parser_failed_domain_auth:
+        return "Failed Domain Auth";
+    case parser_failed_hd_path:
+        return "Failed HD Path";
+    case parser_invalid_request_id:
+        return "Invalid Request ID";
+    case parser_cbor_error_parser_init:
+        return "CBOR parser init error";
+    case parser_cbor_error_invalid_type:
+        return "CBOR invalid type";
+    case parser_cbor_error_map_entry:
+        return "CBOR map entry error";
+    case parser_cbor_error_unexpected:
+        return "CBOR unexpected error";
+    default:
+        return "Unrecognized error code";
     }
 }
 
-const char *parser_getMsgPackTypeDescription(uint8_t type) {
+const char *parser_getMsgPackTypeDescription(uint8_t type)
+{
     switch (type) {
-        case FIXINT_0:
-        case FIXINT_127:
-            return "Fixed Integer";
-        case FIXMAP_0:
-        case FIXMAP_15:
-            return "Fixed Map";
-        case FIXARR_0:
-        case FIXARR_15:
-            return "Fixed Array";
-        case FIXSTR_0:
-        case FIXSTR_31:
-            return "Fix String";
-        case BOOL_FALSE:
-        case BOOL_TRUE:
-            return "Boolean";
-        case BIN8:
-        case BIN16:
-        case BIN32:
-            return "Binary";
-        case UINT8:
-        case UINT16:
-        case UINT32:
-        case UINT64:
-            return "Integer";
-        case STR8:
-        case STR16:
-        case STR32:
-            return "String";
-        case MAP16:
-        case MAP32:
-            return "Map";
-        default:
-            return "Unrecognized type";
+    case FIXINT_0:
+    case FIXINT_127:
+        return "Fixed Integer";
+    case FIXMAP_0:
+    case FIXMAP_15:
+        return "Fixed Map";
+    case FIXARR_0:
+    case FIXARR_15:
+        return "Fixed Array";
+    case FIXSTR_0:
+    case FIXSTR_31:
+        return "Fix String";
+    case BOOL_FALSE:
+    case BOOL_TRUE:
+        return "Boolean";
+    case BIN8:
+    case BIN16:
+    case BIN32:
+        return "Binary";
+    case UINT8:
+    case UINT16:
+    case UINT32:
+    case UINT64:
+        return "Integer";
+    case STR8:
+    case STR16:
+    case STR32:
+        return "String";
+    case MAP16:
+    case MAP32:
+        return "Map";
+    default:
+        return "Unrecognized type";
     }
 }
 
-parser_error_t parser_jsonGetNthKey(parser_context_t *ctx, uint8_t displayIdx, char *outKey, uint16_t outKeyLen) {
+parser_error_t parser_jsonGetNthKey(parser_context_t *ctx, uint8_t displayIdx, char *outKey, uint16_t outKeyLen)
+{
     uint16_t token_index = 0;
     CHECK_ERROR(parser_json_object_get_nth_key(0, displayIdx, &token_index));
-    CHECK_ERROR(parser_getJsonItemFromTokenIndex((const char*)ctx->parser_arbitrary_data_obj->dataBuffer, token_index, outKey, outKeyLen));
+    CHECK_ERROR(parser_getJsonItemFromTokenIndex((const char *)ctx->parser_arbitrary_data_obj->dataBuffer, token_index,
+                                                 outKey, outKeyLen));
     return parser_ok;
 }
 
-parser_error_t parser_jsonGetNthValue(parser_context_t *ctx, uint8_t displayIdx, char *outVal, uint16_t outValLen) {
+parser_error_t parser_jsonGetNthValue(parser_context_t *ctx, uint8_t displayIdx, char *outVal, uint16_t outValLen)
+{
     uint16_t token_index = 0;
     CHECK_ERROR(parser_json_object_get_nth_value(0, displayIdx, &token_index));
-    CHECK_ERROR(parser_getJsonItemFromTokenIndex((const char*)ctx->parser_arbitrary_data_obj->dataBuffer, token_index, outVal, outValLen));
+    CHECK_ERROR(parser_getJsonItemFromTokenIndex((const char *)ctx->parser_arbitrary_data_obj->dataBuffer, token_index,
+                                                 outVal, outValLen));
 
     // Remove backslashes from JSON string values
     // This is needed because we don't want to display backslashes in the UI
     uint16_t writePos = 0;
     uint16_t readPos = 0;
     uint16_t currentLen = strlen(outVal);
-    
+
     while (readPos < currentLen) {
         if (outVal[readPos] == '\\') {
             // Skip the backslash
@@ -1985,7 +1992,7 @@ parser_error_t parser_jsonGetNthValue(parser_context_t *ctx, uint8_t displayIdx,
             readPos++;
         }
     }
-    
+
     // Add null terminator at the new end of string
     outVal[writePos] = '\0';
 

@@ -146,7 +146,7 @@ Last APDU message
 | Signature | byte (64) | Signed message |                          |
 | SW1-SW2   | byte (2)  | Return code    | see list of return codes |
 
-If one signle APDU is needed for the whole transaction along with the account number,
+If one single APDU is needed for the whole transaction along with the account number,
 `P1` and `P2` are `0x01` and `0x00` respectively.
 
 | CLA  | INS  | P1   | P2   | LC  | Payload               |

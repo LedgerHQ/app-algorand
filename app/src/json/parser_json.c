@@ -1,18 +1,18 @@
 /*******************************************************************************
-*  (c) 2018 - 2025 Zondax AG
-*
-*  Licensed under the Apache License, Version 2.0 (the "License");
-*  you may not use this file except in compliance with the License.
-*  You may obtain a copy of the License at
-*
-*      http://www.apache.org/licenses/LICENSE-2.0
-*
-*  Unless required by applicable law or agreed to in writing, software
-*  distributed under the License is distributed on an "AS IS" BASIS,
-*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-*  See the License for the specific language governing permissions and
-*  limitations under the License.
-********************************************************************************/
+ *  (c) 2018 - 2025 Zondax AG
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ ********************************************************************************/
 
 #include <stdint.h>
 #include "parser_common.h"
@@ -26,11 +26,13 @@ static parsed_json_t parsed_json;
 static jsmn_parser p;
 static jsmntok_t t[MAX_NUMBER_OF_JSMN_TOKENS];
 
-parsed_json_t parser_json_get_parsed_json() {
+parsed_json_t parser_json_get_parsed_json()
+{
     return parsed_json;
 }
 
-parser_error_t parser_json_parse(const char *json, size_t json_len, parser_context_t *ctx, uint8_t *items_in_json) {
+parser_error_t parser_json_parse(const char *json, size_t json_len, parser_context_t *ctx, uint8_t *items_in_json)
+{
     MEMZERO(&parsed_json, sizeof(parsed_json));
     jsmn_init(&p);
     int num_tokens = jsmn_parse(&p, json, json_len, t, MAX_NUMBER_OF_JSMN_TOKENS);
@@ -51,7 +53,8 @@ parser_error_t parser_json_parse(const char *json, size_t json_len, parser_conte
     return parser_ok;
 }
 
-parser_error_t parser_json_object_get_element_count(uint16_t object_token_index, uint16_t *element_count) {
+parser_error_t parser_json_object_get_element_count(uint16_t object_token_index, uint16_t *element_count)
+{
     parsed_json_t *json = &parsed_json;
     *element_count = 0;
     if (object_token_index > json->numberOfTokens) {
@@ -82,7 +85,8 @@ parser_error_t parser_json_object_get_element_count(uint16_t object_token_index,
 }
 
 parser_error_t parser_json_object_get_nth_key(uint16_t object_token_index, uint16_t object_element_index,
-                                  uint16_t *token_index) {
+                                              uint16_t *token_index)
+{
     parsed_json_t *json = &parsed_json;
     *token_index = object_token_index;
     if (object_token_index > json->numberOfTokens) {
@@ -117,7 +121,8 @@ parser_error_t parser_json_object_get_nth_key(uint16_t object_token_index, uint1
 }
 
 parser_error_t parser_json_object_get_nth_value(uint16_t object_token_index, uint16_t object_element_index,
-                                    uint16_t *key_index) {
+                                                uint16_t *key_index)
+{
     parsed_json_t *json = &parsed_json;
 
     if (object_token_index > json->numberOfTokens) {
@@ -130,7 +135,9 @@ parser_error_t parser_json_object_get_nth_value(uint16_t object_token_index, uin
     return parser_ok;
 }
 
-parser_error_t parser_getJsonItemFromTokenIndex(const char *jsonBuffer, uint16_t token_index, char *outVal, uint16_t outValLen) {
+parser_error_t parser_getJsonItemFromTokenIndex(const char *jsonBuffer, uint16_t token_index, char *outVal,
+                                                uint16_t outValLen)
+{
     parsed_json_t *json = &parsed_json;
     jsmntok_t token = json->tokens[token_index];
 
@@ -147,7 +154,8 @@ parser_error_t parser_getJsonItemFromTokenIndex(const char *jsonBuffer, uint16_t
     return parser_ok;
 }
 
-static bool is_key_or_value(const char *pData, const char *data) {
+static bool is_key_or_value(const char *pData, const char *data)
+{
     parsed_json_t *json = &parsed_json;
     uint16_t num_keys = 0;
     uint16_t key_token_index = 0;
@@ -176,7 +184,8 @@ static bool is_key_or_value(const char *pData, const char *data) {
     return false;
 }
 
-parser_error_t parser_json_check_canonical(const char *data, uint16_t data_len) {
+parser_error_t parser_json_check_canonical(const char *data, uint16_t data_len)
+{
     uint16_t num_keys = 0;
     CHECK_ERROR(parser_json_object_get_element_count(0, &num_keys));
 
@@ -187,27 +196,27 @@ parser_error_t parser_json_check_canonical(const char *data, uint16_t data_len) 
         This is the blob with the JSON :
 
             +---------------------------------------------------------------------------------------------------------------+
-            |                                                                                                               |
+            | |
             +---------------------------------------------------------------------------------------------------------------+
 
         The JSMN tokens point to parts of the blob like this :
 
             +---------------------------------------------------------------------------------------------------------------+
-            |                                                                                                               |
+            | |
             +---------------------------------------------------------------------------------------------------------------+
-                ^     ^      ^           ^     ^     ^     ^                       ^                                      
-                |     |      |           |     |     |     |                       |                                      
-                +-----+      +-----------+     +-----+     +-----------------------+                                      
+                ^     ^      ^           ^     ^     ^     ^                       ^
+                |     |      |           |     |     |     |                       |
+                +-----+      +-----------+     +-----+     +-----------------------+
     Tokens :    firstKey,    firstValue,       secondKey,  secondValue,                  ...
 
         We are only interested in detecting whitespaces in the following ranges (marked as x):
 
             +---------------------------------------------------------------------------------------------------------------+
-            |xxx       xxxxxx             xxxxx       xxxxx                              ...                                |
+            |xxx       xxxxxx             xxxxx       xxxxx                              ... |
             +---------------------------------------------------------------------------------------------------------------+
-                ^     ^      ^           ^     ^     ^     ^                       ^                                      
-                |     |      |           |     |     |     |                       |                                      
-                +-----+      +-----------+     +-----+     +-----------------------+                                      
+                ^     ^      ^           ^     ^     ^     ^                       ^
+                |     |      |           |     |     |     |                       |
+                +-----+      +-----------+     +-----+     +-----------------------+
 
     */
 
