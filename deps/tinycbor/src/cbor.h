@@ -153,47 +153,47 @@ typedef enum CborError {
     CborNoError = 0,
 
     /* errors in all modes */
-    CborUnknownError,
-    CborErrorUnknownLength,         /* request for length in array, map, or string with indeterminate length */
-    CborErrorAdvancePastEOF,
-    CborErrorIO,
+    CborUnknownError = 1,
+    CborErrorUnknownLength = 2,         /* request for length in array, map, or string with indeterminate length */
+    CborErrorAdvancePastEOF = 3,
+    CborErrorIO = 4,
 
     /* parser errors streaming errors */
     CborErrorGarbageAtEnd = 256,
-    CborErrorUnexpectedEOF,
-    CborErrorUnexpectedBreak,
-    CborErrorUnknownType,           /* can only happen in major type 7 */
-    CborErrorIllegalType,           /* type not allowed here */
-    CborErrorIllegalNumber,
-    CborErrorIllegalSimpleType,     /* types of value less than 32 encoded in two bytes */
+    CborErrorUnexpectedEOF = 257,
+    CborErrorUnexpectedBreak = 258,
+    CborErrorUnknownType = 259,           /* can only happen in major type 7 */
+    CborErrorIllegalType = 260,           /* type not allowed here */
+    CborErrorIllegalNumber = 261,
+    CborErrorIllegalSimpleType = 262,     /* types of value less than 32 encoded in two bytes */
 
     /* parser errors in strict mode parsing only */
     CborErrorUnknownSimpleType = 512,
-    CborErrorUnknownTag,
-    CborErrorInappropriateTagForType,
-    CborErrorDuplicateObjectKeys,
-    CborErrorInvalidUtf8TextString,
-    CborErrorExcludedType,
-    CborErrorExcludedValue,
-    CborErrorImproperValue,
-    CborErrorOverlongEncoding,
-    CborErrorMapKeyNotString,
-    CborErrorMapNotSorted,
-    CborErrorMapKeysNotUnique,
+    CborErrorUnknownTag = 513,
+    CborErrorInappropriateTagForType = 514,
+    CborErrorDuplicateObjectKeys = 515,
+    CborErrorInvalidUtf8TextString = 516,
+    CborErrorExcludedType = 517,
+    CborErrorExcludedValue = 518,
+    CborErrorImproperValue = 519,
+    CborErrorOverlongEncoding = 520,
+    CborErrorMapKeyNotString = 521,
+    CborErrorMapNotSorted = 522,
+    CborErrorMapKeysNotUnique = 523,
 
     /* encoder errors */
     CborErrorTooManyItems = 768,
-    CborErrorTooFewItems,
+    CborErrorTooFewItems = 769,
 
     /* internal implementation errors */
     CborErrorDataTooLarge = 1024,
-    CborErrorNestingTooDeep,
-    CborErrorUnsupportedType,
+    CborErrorNestingTooDeep = 1025,
+    CborErrorUnsupportedType = 1026,
 
     /* errors in converting to JSON */
     CborErrorJsonObjectKeyIsAggregate = 1280,
-    CborErrorJsonObjectKeyNotString,
-    CborErrorJsonNotImplemented,
+    CborErrorJsonObjectKeyNotString = 1281,
+    CborErrorJsonNotImplemented = 1282,
 
     CborErrorOutOfMemory = (int) (~0U / 2 + 1),
     CborErrorInternalError = (int) (~0U / 2)    /* INT_MAX on two's complement machines */
@@ -214,7 +214,7 @@ struct CborEncoder
 };
 typedef struct CborEncoder CborEncoder;
 
-static const size_t CborIndefiniteLength = SIZE_MAX;
+#define CborIndefiniteLength SIZE_MAX
 
 CBOR_API void cbor_encoder_init(CborEncoder *encoder, uint8_t *buffer, size_t size, int flags);
 CBOR_API CborError cbor_encode_uint(CborEncoder *encoder, uint64_t value);

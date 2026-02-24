@@ -355,7 +355,7 @@ parser_error_t _readInteger(parser_context_t *c, uint64_t *value)
     uint8_t intType = 0;
     CHECK_ERROR(_readBytes(c, &intType, 1))
 
-    if (intType >= FIXINT_0 && intType <= FIXINT_127) {
+    if (intType <= FIXINT_127) {
         *value = intType - FIXINT_0;
         return parser_ok;
     }
@@ -571,18 +571,46 @@ parser_error_t _readBool(parser_context_t *c, uint8_t *value)
     return parser_ok;
 }
 
+/**
+ * @brief Parse asset configuration parameters from the current map in the parser context.
+ *
+ * This function reads a msgpack/CBOR-like map that encodes asset configuration
+ * parameters and populates the provided txn_asset_config structure accordingly.
+ * It first determines the number of key/value pairs in the map, validates that
+ * this count does not exceed MAX_PARAM_SIZE, and then iterates over each entry,
+ * decoding parameter keys and their associated values.
+ *
+ * The available_params array is used internally to track which parameters have
+ * been seen and to detect invalid or duplicate fields according to the protocol
+ * definition. Any structural or type mismatch while decoding causes an error
+ * return, leaving the caller responsible for handling partial state in
+ * asset_config.
+ *
+ * @param[in,out] c             Parser context positioned at the beginning of
+ *                              the asset configuration map.
+ * @param[out]    asset_config  Destination structure that will be filled with
+ *                              decoded asset configuration parameters.
+ *
+ * @return parser_ok on success or an appropriate parser_error_t code if the
+ *         input does not conform to the expected asset configuration encoding.
+ */
 static parser_error_t _readAssetParams(parser_context_t *c, txn_asset_config *asset_config)
 {
+    // Tracks availability/usage of each parameter slot during decoding.
     uint8_t available_params[MAX_PARAM_SIZE];
     memset(available_params, 0xFF, MAX_PARAM_SIZE);
 
+    // Number of key/value pairs present in the asset configuration map.
     uint16_t paramsSize = 0;
     CHECK_ERROR(_readMapSize(c, &paramsSize))
 
     if (paramsSize > MAX_PARAM_SIZE) {
+        // Defensive check: reject maps that advertise more entries than
+        // the implementation is prepared to handle.
         return parser_unexpected_number_items;
     }
 
+    // Temporary buffer used to hold the raw key bytes for each map entry.
     uint8_t key[10] = {0};
     for (uint16_t i = 0; i < paramsSize; i++) {
         CHECK_ERROR(_readString(c, key, sizeof(key)))
@@ -1314,8 +1342,29 @@ static parser_error_t _readTxAssetConfig(parser_context_t *c, parser_tx_t *v)
     return parser_ok;
 }
 
+/**
+ * @brief Parse an application transaction from the parser context.
+ *
+ * This function reads the fields of an application transaction (such as
+ * boxes, foreign applications and assets, accounts, application arguments,
+ * approval/clear programs, and related metadata) from the parser context
+ * and stores them into v->application. It also prepares the list of
+ * elements that will later be shown to the user on the device by
+ * resetting the global tx_num_items counter.
+ *
+ * The function initializes all fields of the txn_application structure to
+ * safe default values before attempting to parse any optional components,
+ * so that missing or malformed fields do not leave partially initialized
+ * data in the transaction object.
+ *
+ * @param c Parsing context pointing to the encoded transaction data.
+ * @param v Parsed transaction structure where the application data is stored.
+ * @return parser_ok on success, or an error code if parsing fails.
+ */
 static parser_error_t _readTxApplication(parser_context_t *c, parser_tx_t *v)
 {
+    // Reset the number of UI items for this transaction and initialize
+    // all application-specific fields to known defaults before parsing.
     tx_num_items = 0;
     txn_application *application = &v->application;
     application->num_boxes = 0;
@@ -1975,6 +2024,18 @@ uint16_t parser_mapParserErrorToSW(parser_error_t err)
     }
 }
 
+/**
+ * @brief Return a human-readable description for a parser error code.
+ *
+ * This function maps each value of ::parser_error_t to a constant,
+ * null-terminated C string that can be used for logging, debugging,
+ * or displaying error messages to the user.
+ *
+ * @param err  The parser error code to describe.
+ * @return     Pointer to a static read-only string describing @p err.
+ *             The pointer is never NULL. Unrecognized error codes are
+ *             mapped to a generic description via the default case.
+ */
 const char *parser_getErrorDescription(parser_error_t err)
 {
     switch (err) {
