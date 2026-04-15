@@ -98,9 +98,6 @@ parser_error_t _toStringSchema(const state_schema *schema, char *outValue, uint1
                                uint8_t *pageCount)
 {
     // Don't display if nonzero schema cannot be valid
-    // if (current_txn.application.id != 0) {
-    //     return 0;
-    // }
     char schm_repr[65] = {0};
     char uint_part[32] = {0};
     char byte_part[32] = {0};

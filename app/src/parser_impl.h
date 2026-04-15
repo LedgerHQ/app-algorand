@@ -76,6 +76,8 @@ parser_error_t _readBinFixed(parser_context_t *c, uint8_t *buff, uint16_t buffer
 parser_error_t _getAccount(parser_context_t *c, uint8_t *account, uint8_t account_idx, uint8_t num_accounts);
 parser_error_t _getAppArg(parser_context_t *c, uint8_t **args, uint16_t *args_len, uint8_t args_idx,
                           uint16_t max_args_len, uint8_t max_array_len);
+parser_error_t _getAccessListElement(parser_context_t *c, access_list_element *accessListElement,
+                                     uint8_t accessListElement_idx);
 
 DEF_READFIX_UNSIGNED(8);
 DEF_READFIX_UNSIGNED(16);
