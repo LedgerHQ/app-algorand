@@ -12,7 +12,7 @@ The general structure of commands and responses is as follows:
 | INS     | byte (1) | Instruction ID         |      |
 | P1      | byte (1) | Parameter 1            |      |
 | P2      | byte (1) | Parameter 2            |      |
-| L       | byte (1) | Bytes in payload       |      |
+| L       | byte (1) | Number of bytes in the payload       |      |
 | PAYLOAD | byte (L) | Payload                |      |
 
 ### Response
