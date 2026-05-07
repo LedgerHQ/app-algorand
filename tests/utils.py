@@ -6,7 +6,7 @@ import json
 import hashlib
 import base64
 import msgpack  # type: ignore[import-not-found]
-import ed25519  # type: ignore[import-not-found]
+from Crypto.Signature import eddsa  # type: ignore[import-not-found]
 import canonicaljson  # type: ignore[import-not-found]
 
 from .application_client.algorand_types import StdSigData
@@ -51,17 +51,11 @@ def check_signature_validity(
         True if signature is valid, False otherwise
     """
     try:
-        # Create verifying key from public key bytes
-        verifying_key = ed25519.VerifyingKey(public_key)
-
-        # Verify the signature directly without any prefix
-        verifying_key.verify(signature, message)
+        verifying_key = eddsa.import_public_key(public_key)
+        verifier = eddsa.new(verifying_key, mode="rfc8032")
+        verifier.verify(message, signature)
         return True
-    except ed25519.BadSignatureError:
-        # Signature verification failed
-        return False
-    except Exception:
-        # Other errors (e.g., invalid key format)
+    except (ValueError, TypeError):
         return False
 
 
