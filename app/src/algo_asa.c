@@ -4,9 +4,12 @@
 
 #define ARRAY_SIZE(__arr) (sizeof(__arr) / sizeof(__arr[0]))
 
-#define ALGO_ASA(__id, __name, __unit, __decimals)                               \
-    {                                                                            \
-        .assetId = __id, .decimals = __decimals, .unit = __unit, .name = __name, \
+#define ALGO_ASA(__id, __name, __unit, __decimals) \
+    {                                              \
+        .assetId = __id,                           \
+        .decimals = __decimals,                    \
+        .unit = __unit,                            \
+        .name = __name,                            \
     }
 
 static const algo_asset_info_t algo_assets[] = {
