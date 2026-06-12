@@ -129,6 +129,18 @@ DEFINES += HAVE_U2F HAVE_IO_U2F U2F_PROXY_MAGIC=\"algo\"
 SDK_SOURCE_PATH += lib_u2f
 LDFLAGS  += -z muldefs
 
+# Touchscreen targets: interpose the NBGL review use cases so that
+# src/view_nbgl_wrap.c can clear nbMaxLinesForValue on the tag/value lists
+# built by ledger-zxlib. Recent SDKs use that field to clamp the line count
+# before the page-overflow check, which suppresses the TAG_VALUE_DETAILS
+# ("More" button) page and silently truncates oversized value chunks.
+# Clearing it matches Ledger's first-party apps, which leave the field at 0.
+# See src/view_nbgl_wrap.c; remove with the migration off zxlib's NBGL views.
+ifneq (,$(filter $(TARGET_NAME),TARGET_STAX TARGET_FLEX TARGET_APEX_P))
+LDFLAGS += -Wl,--wrap=nbgl_useCaseReview
+LDFLAGS += -Wl,--wrap=nbgl_useCaseReviewBlindSigning
+endif
+
 ########################################
 
 # Configure devices and permissions
