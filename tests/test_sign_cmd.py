@@ -1,49 +1,46 @@
-import pytest
+from pathlib import Path
 
+import pytest
 from ragger.backend.interface import BackendInterface
 from ragger.error import ExceptionRAPDU
-from ragger.navigator.navigation_scenario import NavigateWithScenario
-from ragger.navigator import NavInsID, Navigator
-
-from ledgered.devices import DeviceType
+from ragger.navigator import Navigator, NavInsID
 
 from .application_client.algorand_command_sender import AlgorandCommandSender, Errors
 from .application_client.algorand_response_unpacker import (
     unpack_get_public_key_response,
 )
-from .utils import check_tx_signature_validity, encode_transaction
 from .data import (
-    txAssetFreeze,
-    txAssetXfer,
-    txAssetConfig,
-    txKeyreg,
-    txPayment,
+    txAlAddress,
+    txAlApplication,
+    txAlAsset,
+    txAlBox,
+    txAlComplexMixHoldingAndLocals,
+    txAlEmptyBoxRef,
+    txAlHolding,
+    txAlHoldingMissingAddressIndex,
+    txAlHoldingMissingAssetIndex,
+    txAlLocals,
+    txAlLocalsMissingAddressIndex,
+    txAlLocalsMissingApplicationIndex,
+    txAlMaxElements,
+    txAlMixedResources,
+    txAlMixedWithBoxAndLocals,
+    txAlMultipleAddresses,
+    txAlMultipleApplications,
+    txAlMultipleAssets,
+    txAlOverMaxElements,
+    txAppArgsWithAl,
     txApplication,
     txApplicationLong,
     txAprv,
-    txAlAddress,
-    txAlMultipleAddresses,
-    txAlAsset,
-    txAlApplication,
-    txAlHolding,
+    txAssetConfig,
+    txAssetFreeze,
+    txAssetXfer,
+    txKeyreg,
     txMultipleHoldings,
-    txAlLocals,
-    txAlBox,
-    txAlEmptyBoxRef,
-    txAlMixedResources,
-    txAlMixedWithBoxAndLocals,
-    txAlMaxElements,
-    txAlOverMaxElements,
-    txAlMultipleAssets,
-    txAlMultipleApplications,
-    txAlComplexMixHoldingAndLocals,
-    txAlHoldingMissingAddressIndex,
-    txAlHoldingMissingAssetIndex,
-    txAlLocalsMissingAddressIndex,
-    txAlLocalsMissingApplicationIndex,
-    txAppArgsWithAl,
+    txPayment,
 )
-
+from .utils import check_tx_signature_validity, encode_transaction
 
 """
 Transaction signing tests for Algorand Ledger application.
@@ -73,7 +70,7 @@ def sign_tx_and_verify(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
     """Sign a transaction on the device and verify the signature.
 
@@ -128,7 +125,9 @@ def sign_tx_and_verify(
         )
 
     # Retrieve the signature and verify its validity
-    signature = client.get_async_response().data
+    async_response = client.get_async_response()
+    assert async_response is not None
+    signature = async_response.data
     assert check_tx_signature_validity(public_key, signature, transaction_blob)
 
 
@@ -136,7 +135,7 @@ def test_sign_asset_freeze_tx(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
     """Test signing an asset freeze transaction."""
     sign_tx_and_verify(
@@ -152,7 +151,7 @@ def test_sign_asset_transfer_tx(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
     """Test signing an asset transfer transaction."""
     sign_tx_and_verify(
@@ -168,7 +167,7 @@ def test_sign_asset_config_tx(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
     """Test signing an asset configuration transaction."""
     sign_tx_and_verify(
@@ -184,7 +183,7 @@ def test_sign_keyreg_tx(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
     """Test signing a key registration transaction."""
     sign_tx_and_verify(
@@ -200,7 +199,7 @@ def test_sign_payment_tx(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
     """Test signing a payment transaction."""
     sign_tx_and_verify(
@@ -216,7 +215,7 @@ def test_sign_application_tx(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
     """Test signing an application call transaction."""
     sign_tx_and_verify(
@@ -232,7 +231,7 @@ def test_sign_asset_freeze_and_application_tx(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
     """Test signing two transactions sequentially: asset freeze and application call."""
     sign_tx_and_verify(
@@ -256,7 +255,7 @@ def test_sign_application_long_tx(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
     """Test signing a long application transaction with many fields."""
     sign_tx_and_verify(
@@ -272,10 +271,10 @@ def test_sign_application_long_shortcut_tx(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
     """Test signing a long application transaction using shortcut mode (Nano devices only).
-    
+
     This test enables expert mode and shortcut mode, then signs a long application
     transaction by skipping fields and directly approving.
     """
@@ -318,11 +317,6 @@ def test_sign_application_long_shortcut_tx(
     else:
         transaction_blob = bytes(txApplicationLong)
 
-    # Configure navigation instructions for Nano devices
-    navigate_instructions = NANO_NAVIGATE_INSTRUCTIONS
-    validate_instructions = NANO_VALIDATE_INSTRUCTIONS
-    text_to_search = "APPROVE"
-
     # Navigation sequence to skip fields and approve
     skip_and_approve_instructions = [
         NavInsID.RIGHT_CLICK,
@@ -341,7 +335,9 @@ def test_sign_application_long_shortcut_tx(
         )
 
     # Retrieve the signature and verify its validity
-    signature = client.get_async_response().data
+    async_response = client.get_async_response()
+    assert async_response is not None
+    signature = async_response.data
     assert check_tx_signature_validity(public_key, signature, transaction_blob)
 
 
@@ -349,7 +345,7 @@ def test_sign_aprv_tx(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
     """Test signing an APRV (app reject version) transaction."""
     tx_blob = encode_transaction(txAprv)
@@ -367,7 +363,7 @@ def test_sign_al_address_tx(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
     """Test signing a transaction with access list containing address resources."""
     tx_blob = encode_transaction(txAlAddress)
@@ -385,7 +381,7 @@ def test_sign_al_holding_tx(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
     """Test signing a transaction with access list containing holding resources."""
     tx_blob = encode_transaction(txAlHolding)
@@ -403,7 +399,7 @@ def test_sign_al_multiple_addresses_tx(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
     """Test signing a transaction with access list containing multiple address resources."""
     tx_blob = encode_transaction(txAlMultipleAddresses)
@@ -421,7 +417,7 @@ def test_sign_al_multiple_holdings_tx(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
     """Test signing a transaction with access list containing multiple holding resources."""
     tx_blob = encode_transaction(txMultipleHoldings)
@@ -442,7 +438,7 @@ def test_sign_al_asset_tx(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
     """Test signing a transaction with access list containing asset resources."""
     tx_blob = encode_transaction(txAlAsset)
@@ -460,7 +456,7 @@ def test_sign_al_application_tx(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
     """Test signing a transaction with access list containing application resources."""
     tx_blob = encode_transaction(txAlApplication)
@@ -478,7 +474,7 @@ def test_sign_al_locals_tx(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
     """Test signing a transaction with access list containing local resources."""
     tx_blob = encode_transaction(txAlLocals)
@@ -496,7 +492,7 @@ def test_sign_al_box_tx(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
     """Test signing a transaction with access list containing box resources."""
     tx_blob = encode_transaction(txAlBox)
@@ -514,7 +510,7 @@ def test_sign_al_empty_box_ref_tx(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
     """Test signing a transaction with access list containing an empty box reference."""
     tx_blob = encode_transaction(txAlEmptyBoxRef)
@@ -532,7 +528,7 @@ def test_sign_al_mixed_resources_tx(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
     """Test signing a transaction with access list containing mixed resource types (address, asset, application, empty)."""
     tx_blob = encode_transaction(txAlMixedResources)
@@ -550,7 +546,7 @@ def test_sign_al_mixed_with_box_and_locals_tx(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
     """Test signing a transaction with access list containing both box and local resources."""
     tx_blob = encode_transaction(txAlMixedWithBoxAndLocals)
@@ -568,7 +564,7 @@ def test_sign_al_max_elements_tx(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
     """Test signing a transaction with access list at maximum capacity (16 elements)."""
     tx_blob = encode_transaction(txAlMaxElements)
@@ -586,9 +582,9 @@ def test_sign_al_multiple_assets_tx(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
-    """Test signing a transaction with access list containing multiple asset ressources."""
+    """Test signing a transaction with access list containing multiple asset resources."""
     tx_blob = encode_transaction(txAlMultipleAssets)
 
     sign_tx_and_verify(
@@ -604,9 +600,9 @@ def test_sign_al_multiple_applications_tx(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
-    """Test signing a transaction with access list containing multiple application ressources."""
+    """Test signing a transaction with access list containing multiple application resources."""
     tx_blob = encode_transaction(txAlMultipleApplications)
 
     sign_tx_and_verify(
@@ -622,7 +618,7 @@ def test_sign_al_complex_mix_holding_and_locals_tx(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
     """Test signing a transaction with access list containing a complex mix of holding and local resources."""
     tx_blob = encode_transaction(txAlComplexMixHoldingAndLocals)
@@ -656,7 +652,7 @@ def test_sign_al_holding_missing_address_index_tx(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
     """Test signing a transaction with holding resource missing the address index (d field)."""
     tx_blob = encode_transaction(txAlHoldingMissingAddressIndex)
@@ -674,7 +670,7 @@ def test_sign_al_holding_missing_asset_index_tx(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
     """Test signing a transaction with holding resource missing the asset index (s field)."""
     tx_blob = encode_transaction(txAlHoldingMissingAssetIndex)
@@ -692,7 +688,7 @@ def test_sign_al_locals_missing_address_index_tx(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
     """Test signing a transaction with local resource missing the address index (d field)."""
     tx_blob = encode_transaction(txAlLocalsMissingAddressIndex)
@@ -710,7 +706,7 @@ def test_sign_al_locals_missing_application_index_tx(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
     """Test signing a transaction with local resource missing the application index (p field)."""
     tx_blob = encode_transaction(txAlLocalsMissingApplicationIndex)
@@ -723,11 +719,12 @@ def test_sign_al_locals_missing_application_index_tx(
         default_screenshot_path,
     )
 
+
 def test_sign_tx_refused(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
     """Test that rejecting a transaction signature returns the expected error."""
     # Initialize the Algorand command sender client
@@ -765,7 +762,7 @@ def test_sign_tx_app_args_with_al(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
     """Test signing a transaction with application arguments and access list."""
     tx_blob = encode_transaction(txAppArgsWithAl)

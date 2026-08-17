@@ -1,34 +1,33 @@
-from ledgered.devices import DeviceType, Device
-from ragger.navigator import Navigator, NavInsID, NavIns
+from pathlib import Path
+
+from ledgered.devices import Device, DeviceType
+from ragger.navigator import Navigator, NavIns, NavInsID
 
 
 # In this test we check the behavior of the device main menu
-def test_app_mainmenu(device: Device,
-                      navigator: Navigator,
-                      test_name: str,
-                      default_screenshot_path: str) -> None:
-    
-    #nav: mainmenu, click on settings,  toggle first setting (expert mode) *2,  go to next screen *2, exit settings 
+def test_app_mainmenu(device: Device, navigator: Navigator, test_name: str, default_screenshot_path: Path) -> None:
+
+    # nav: mainmenu, click on settings,  toggle first setting (expert mode) *2,  go to next screen *2, exit settings
     # Navigate in the main menu
-    instructions = []
+    instructions: list[NavInsID | NavIns] = []
     if device.is_nano:
         instructions += [
             NavInsID.RIGHT_CLICK,
             NavInsID.BOTH_CLICK,  # enable expert mode
             NavInsID.RIGHT_CLICK,
             NavInsID.BOTH_CLICK,  # enable shortcut mode
-            NavInsID.RIGHT_CLICK, 
-            NavInsID.RIGHT_CLICK, 
-            NavInsID.RIGHT_CLICK, 
-            NavInsID.RIGHT_CLICK, 
-            NavInsID.RIGHT_CLICK, 
-            NavInsID.BOTH_CLICK ,  # enable shortcut mode
-            NavInsID.RIGHT_CLICK, 
-            NavInsID.RIGHT_CLICK, 
-            NavInsID.RIGHT_CLICK, 
-            NavInsID.RIGHT_CLICK, 
-            NavInsID.RIGHT_CLICK, 
-            NavInsID.RIGHT_CLICK, 
+            NavInsID.RIGHT_CLICK,
+            NavInsID.RIGHT_CLICK,
+            NavInsID.RIGHT_CLICK,
+            NavInsID.RIGHT_CLICK,
+            NavInsID.RIGHT_CLICK,
+            NavInsID.BOTH_CLICK,  # enable shortcut mode
+            NavInsID.RIGHT_CLICK,
+            NavInsID.RIGHT_CLICK,
+            NavInsID.RIGHT_CLICK,
+            NavInsID.RIGHT_CLICK,
+            NavInsID.RIGHT_CLICK,
+            NavInsID.RIGHT_CLICK,
         ]
     elif device.type is DeviceType.STAX:
         instructions += [
@@ -37,7 +36,7 @@ def test_app_mainmenu(device: Device,
             NavIns(NavInsID.TOUCH, (200, 113)),
             NavInsID.USE_CASE_SETTINGS_NEXT,
             NavInsID.USE_CASE_SETTINGS_NEXT,
-            NavInsID.USE_CASE_SETTINGS_MULTI_PAGE_EXIT
+            NavInsID.USE_CASE_SETTINGS_MULTI_PAGE_EXIT,
         ]
     elif device.type is DeviceType.FLEX:
         instructions += [
@@ -46,7 +45,7 @@ def test_app_mainmenu(device: Device,
             NavIns(NavInsID.TOUCH, (200, 113)),
             NavInsID.USE_CASE_SETTINGS_NEXT,
             NavInsID.USE_CASE_SETTINGS_NEXT,
-            NavInsID.USE_CASE_SETTINGS_MULTI_PAGE_EXIT
+            NavInsID.USE_CASE_SETTINGS_MULTI_PAGE_EXIT,
         ]
     elif device.type is DeviceType.APEX_P:
         instructions += [
@@ -55,9 +54,8 @@ def test_app_mainmenu(device: Device,
             NavIns(NavInsID.TOUCH, (243, 90)),
             NavInsID.USE_CASE_SETTINGS_NEXT,
             NavInsID.USE_CASE_SETTINGS_NEXT,
-            NavInsID.USE_CASE_SETTINGS_MULTI_PAGE_EXIT
+            NavInsID.USE_CASE_SETTINGS_MULTI_PAGE_EXIT,
         ]
 
     assert len(instructions) > 0
-    navigator.navigate_and_compare(default_screenshot_path, test_name, instructions,
-                                   screen_change_before_first_instruction=False)
+    navigator.navigate_and_compare(default_screenshot_path, test_name, instructions, screen_change_before_first_instruction=False)

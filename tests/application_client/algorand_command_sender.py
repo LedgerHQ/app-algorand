@@ -1,10 +1,10 @@
-from enum import IntEnum
-from typing import Generator, Optional, List
-from contextlib import contextmanager
 import base64
 import struct
+from collections.abc import Generator
+from contextlib import contextmanager
+from enum import IntEnum
 
-from ragger.backend.interface import BackendInterface, RAPDU  # type: ignore  # pylint: disable=import-error
+from ragger.backend.interface import RAPDU, BackendInterface  # type: ignore  # pylint: disable=import-error
 
 from ..utils import pack_account_id
 from .algorand_types import StdSigData, StdSignMetadata
@@ -80,7 +80,7 @@ class Errors(IntEnum):
     SW_FAILED_HD_PATH = 0x698F
 
 
-def split_message(message: bytes, max_size: int) -> List[bytes]:
+def split_message(message: bytes, max_size: int) -> list[bytes]:
     return [message[x : x + max_size] for x in range(0, len(message), max_size)]
 
 
@@ -135,9 +135,7 @@ def serialize_path(path: str) -> bytes:
 
     path_array = path.split("/")
     if len(path_array) != 6:
-        raise ValueError(
-            "Invalid path. It should be a BIP44 path (e.g \"m/44'/1'/5'/0/3\")"
-        )
+        raise ValueError("Invalid path. It should be a BIP44 path (e.g \"m/44'/1'/5'/0/3\")")
 
     # Allocate 20 bytes for 5 uint32 values
     buf = bytearray(20)
@@ -153,16 +151,12 @@ def serialize_path(path: str) -> bytes:
             try:
                 value = int(component[:-1])
             except ValueError as exc:
-                raise ValueError(
-                    f"Invalid path: {component} is not a number. (e.g \"m/44'/1'/5'/0/3\")"
-                ) from exc
+                raise ValueError(f"Invalid path: {component} is not a number. (e.g \"m/44'/1'/5'/0/3\")") from exc
         else:
             try:
                 value = int(component)
             except ValueError as exc:
-                raise ValueError(
-                    f"Invalid path: {component} is not a number. (e.g \"m/44'/1'/5'/0/3\")"
-                ) from exc
+                raise ValueError(f"Invalid path: {component} is not a number. (e.g \"m/44'/1'/5'/0/3\")") from exc
 
         if value >= HARDENED:
             raise ValueError("Incorrect child value (bigger or equal to 0x80000000)")
@@ -190,9 +184,7 @@ class AlgorandCommandSender:
     #     )
 
     def get_version(self) -> RAPDU:
-        return self.backend.exchange(
-            cla=CLA, ins=InsType.GET_VERSION, p1=P1.P1_START, p2=P2.P2_LAST, data=b""
-        )
+        return self.backend.exchange(cla=CLA, ins=InsType.GET_VERSION, p1=P1.P1_START, p2=P2.P2_LAST, data=b"")
 
     # def get_app_name(self) -> RAPDU:
     #     return self.backend.exchange(
@@ -200,9 +192,7 @@ class AlgorandCommandSender:
     #     )
 
     @contextmanager
-    def get_address_and_public_key_with_confirmation(
-        self, account_id: int = 0
-    ) -> Generator[None, None, None]:
+    def get_address_and_public_key_with_confirmation(self, account_id: int = 0) -> Generator[None, None, None]:
         with self.backend.exchange_async(
             cla=CLA,
             ins=InsType.GET_ADDRESS,
@@ -223,9 +213,7 @@ class AlgorandCommandSender:
 
     # Deprecated use get_address_and_public_key instead
     @contextmanager
-    def get_public_key_with_confirmation(
-        self, account_id: int = 0
-    ) -> Generator[None, None, None]:
+    def get_public_key_with_confirmation(self, account_id: int = 0) -> Generator[None, None, None]:
         with self.backend.exchange_async(
             cla=CLA,
             ins=InsType.GET_PUBLIC_KEY,
@@ -246,9 +234,7 @@ class AlgorandCommandSender:
         )
 
     @contextmanager
-    def sign_tx(
-        self, account_id: int, transaction: bytes
-    ) -> Generator[None, None, None]:
+    def sign_tx(self, account_id: int, transaction: bytes) -> Generator[None, None, None]:
         # Add the account id to the transaction
         message = add_account_id_to_message(transaction, account_id)
         # Split the transaction into chunks
@@ -270,9 +256,7 @@ class AlgorandCommandSender:
                 )
 
                 if rapdu.status != Errors.SW_SUCCESS:
-                    raise AlgorandSigningError(
-                        f"Error after sending chunk number {i}: {rapdu.status}"
-                    )
+                    raise AlgorandSigningError(f"Error after sending chunk number {i}: {rapdu.status}")
 
         # Send the last chunk
         with self.backend.exchange_async(
@@ -318,9 +302,7 @@ class AlgorandCommandSender:
         else:
             request_id_buffer = b""
 
-        auth_data_buffer = (
-            auth_request.authenticationData if auth_request.authenticationData else b""
-        )
+        auth_data_buffer = auth_request.authenticationData if auth_request.authenticationData else b""
 
         return (
             signer_buffer,
@@ -358,17 +340,7 @@ class AlgorandCommandSender:
         """
         # Calculate message size with variable length fields (2-byte prefixes)
         message_size = (
-            len(signer)
-            + len(scope)
-            + len(encoding)
-            + 2
-            + len(data)
-            + 2
-            + len(domain)
-            + 2
-            + len(request_id)
-            + 2
-            + len(auth_data)
+            len(signer) + len(scope) + len(encoding) + 2 + len(data) + 2 + len(domain) + 2 + len(request_id) + 2 + len(auth_data)
         )
 
         # Build the message buffer
@@ -379,9 +351,7 @@ class AlgorandCommandSender:
             nonlocal offset
             if variable_length:
                 # Write 2-byte big-endian length prefix
-                message_buffer[offset : offset + 2] = len(buffer).to_bytes(
-                    2, byteorder="big"
-                )
+                message_buffer[offset : offset + 2] = len(buffer).to_bytes(2, byteorder="big")
                 offset += 2
             # Copy buffer data
             message_buffer[offset : offset + len(buffer)] = buffer
@@ -398,7 +368,7 @@ class AlgorandCommandSender:
 
         return bytes(message_buffer)
 
-    def _send_sign_data_chunks(self, chunks: List[bytes], p1_add: int, p2: int) -> None:
+    def _send_sign_data_chunks(self, chunks: list[bytes], p1_add: int, p2: int) -> None:
         """Send all chunks except the last one.
 
         Args:
@@ -421,14 +391,10 @@ class AlgorandCommandSender:
                 )
 
                 if rapdu.status != Errors.SW_SUCCESS:
-                    raise AlgorandSigningError(
-                        f"Error after sending chunk number {i}: {rapdu.status}"
-                    )
+                    raise AlgorandSigningError(f"Error after sending chunk number {i}: {rapdu.status}")
 
     @contextmanager
-    def sign_data(
-        self, auth_request: StdSigData, metadata: StdSignMetadata
-    ) -> Generator[None, None, None]:
+    def sign_data(self, auth_request: StdSigData, metadata: StdSignMetadata) -> Generator[None, None, None]:
         """Sign arbitrary data using the Algorand app.
 
         Args:
@@ -492,7 +458,7 @@ class AlgorandCommandSender:
         ) as response:
             yield response
 
-    def get_async_response(self) -> Optional[RAPDU]:
+    def get_async_response(self) -> RAPDU | None:
         return self.backend.last_async_response
 
     # def sign_tx_sync(self, path: str, transaction: bytes) -> Optional[RAPDU]:

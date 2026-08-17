@@ -1,11 +1,13 @@
+from pathlib import Path
+
 import pytest
+from ledgered.devices import Device
+from ragger.backend.interface import BackendInterface
 
 # from ragger.bip import calculate_public_key_and_chaincode, CurveChoice
 from ragger.error import ExceptionRAPDU
-from ragger.backend.interface import BackendInterface
+from ragger.navigator import Navigator, NavInsID
 from ragger.navigator.navigation_scenario import NavigateWithScenario
-from ragger.navigator import NavInsID, Navigator
-from ledgered.devices import Device
 
 from .application_client.algorand_command_sender import AlgorandCommandSender, Errors
 from .application_client.algorand_response_unpacker import (
@@ -17,13 +19,12 @@ from .application_client.algorand_response_unpacker import (
 def test_get_public_key_no_confirm(backend: BackendInterface) -> None:
     client = AlgorandCommandSender(backend)
     account_id = 123
-    expected_public_key = (
-        "0dfdbcdb8eebed628cfb4ef70207b86fd0deddca78e90e8c59d6f441e383b377"
-    )
-    response =  client.get_public_key(account_id=account_id)
-    _, public_key, _, address = unpack_get_public_key_response(response.data)
+    expected_public_key = "0dfdbcdb8eebed628cfb4ef70207b86fd0deddca78e90e8c59d6f441e383b377"
+    response = client.get_public_key(account_id=account_id)
+    _, public_key, _, _address = unpack_get_public_key_response(response.data)
 
     assert public_key.hex() == expected_public_key
+
 
 # In this test we check that the GET_PUBLIC_KEY works in confirmation mode
 def test_get_public_key_confirm_accepted(
@@ -32,17 +33,15 @@ def test_get_public_key_confirm_accepted(
     device: Device,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
 
     client = AlgorandCommandSender(backend)
     account_id = 123
-    expected_public_key = (
-        "0dfdbcdb8eebed628cfb4ef70207b86fd0deddca78e90e8c59d6f441e383b377"
-    )
+    expected_public_key = "0dfdbcdb8eebed628cfb4ef70207b86fd0deddca78e90e8c59d6f441e383b377"
     expected_address = "BX63ZW4O5PWWFDH3J33QEB5YN7IN5XOKPDUQ5DCZ232EDY4DWN3XKUQRCA"
 
-    with client.get_public_key_with_confirmation(account_id=account_id) as response:
+    with client.get_public_key_with_confirmation(account_id=account_id) as _:
         if not device.is_nano:
             scenario_navigator.address_review_approve()
         else:
@@ -54,9 +53,9 @@ def test_get_public_key_confirm_accepted(
                 test_name,
             )
 
-    response = client.get_async_response().data
-    _, public_key, _, address = unpack_get_public_key_response(response)
-
+    async_response = client.get_async_response()
+    assert async_response is not None
+    _, public_key, _, address = unpack_get_public_key_response(async_response.data)
 
     assert public_key.hex() == expected_public_key
     assert address.decode("ascii") == expected_address
@@ -69,14 +68,14 @@ def test_get_public_key_confirm_refused(
     device: Device,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
 
     client = AlgorandCommandSender(backend)
     account_id = 123
 
     with pytest.raises(ExceptionRAPDU) as e:
-        with client.get_public_key_with_confirmation(account_id=account_id) as response:
+        with client.get_public_key_with_confirmation(account_id=account_id):
             if not device.is_nano:
                 scenario_navigator.address_review_reject()
             else:
@@ -96,9 +95,7 @@ def test_get_public_key_confirm_refused(
 def test_get_address_and_public_key_no_confirm(backend: BackendInterface) -> None:
     client = AlgorandCommandSender(backend)
     account_id = 123
-    expected_public_key = (
-        "0dfdbcdb8eebed628cfb4ef70207b86fd0deddca78e90e8c59d6f441e383b377"
-    )
+    expected_public_key = "0dfdbcdb8eebed628cfb4ef70207b86fd0deddca78e90e8c59d6f441e383b377"
     response = client.get_address_and_public_key(account_id=account_id).data
 
     _, public_key, _, _ = unpack_get_public_key_response(response)
@@ -112,17 +109,15 @@ def test_get_address_and_public_key_confirm_accepted(
     device: Device,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
 
     client = AlgorandCommandSender(backend)
     account_id = 123
-    expected_public_key = (
-        "0dfdbcdb8eebed628cfb4ef70207b86fd0deddca78e90e8c59d6f441e383b377"
-    )
+    expected_public_key = "0dfdbcdb8eebed628cfb4ef70207b86fd0deddca78e90e8c59d6f441e383b377"
     expected_address = "BX63ZW4O5PWWFDH3J33QEB5YN7IN5XOKPDUQ5DCZ232EDY4DWN3XKUQRCA"
 
-    with client.get_address_and_public_key_with_confirmation(account_id=account_id) as response:
+    with client.get_address_and_public_key_with_confirmation(account_id=account_id) as _:
         if not device.is_nano:
             scenario_navigator.address_review_approve()
         else:
@@ -134,8 +129,9 @@ def test_get_address_and_public_key_confirm_accepted(
                 test_name,
             )
 
-    response = client.get_async_response().data
-    _, public_key, _, address = unpack_get_public_key_response(response)
+    async_response = client.get_async_response()
+    assert async_response is not None
+    _, public_key, _, address = unpack_get_public_key_response(async_response.data)
 
     assert public_key.hex() == expected_public_key
     assert address.decode("ascii") == expected_address
@@ -148,14 +144,14 @@ def test_get_address_and_public_key_confirm_refused(
     device: Device,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
 
     client = AlgorandCommandSender(backend)
     account_id = 123
 
     with pytest.raises(ExceptionRAPDU) as e:
-        with client.get_address_and_public_key_with_confirmation(account_id=account_id) as response:
+        with client.get_address_and_public_key_with_confirmation(account_id=account_id):
             if not device.is_nano:
                 scenario_navigator.address_review_reject()
             else:

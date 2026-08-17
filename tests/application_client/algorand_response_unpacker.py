@@ -1,4 +1,3 @@
-from typing import Tuple
 from struct import unpack
 
 
@@ -9,7 +8,7 @@ from struct import unpack
 #            PATCH (2)
 #            locked (1)
 #            target_id (4)
-def unpack_get_version_response(response: bytes) -> Tuple[int, int, int, int, int, int]:
+def unpack_get_version_response(response: bytes) -> tuple[int, int, int, int, int, int]:
     assert len(response) == 12  # 000002000500070033000004
     # Format: >B = test (1 byte),
     #         HHH = major/minor/patch (3x 2-byte big-endian),
@@ -24,7 +23,7 @@ def unpack_get_version_response(response: bytes) -> Tuple[int, int, int, int, in
 #            pub_key (var)
 #            chain_code_len (1)
 #            chain_code (var)
-def unpack_get_public_key_response(response: bytes) -> Tuple[int, bytes, int, bytes]:
+def unpack_get_public_key_response(response: bytes) -> tuple[int, bytes, int, bytes]:
 
     PUBKEY_LEN = 32
     ADDRESS_LEN = 58

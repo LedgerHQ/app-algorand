@@ -1,21 +1,19 @@
+import base64
+import hashlib
+import json
+import re
 from pathlib import Path
 
-from typing import List
-import re
-import json
-import hashlib
-import base64
-import msgpack  # type: ignore[import-not-found]
-import ed25519  # type: ignore[import-not-found]
 import canonicaljson  # type: ignore[import-not-found]
+import msgpack  # type: ignore[import-not-found]
+from nacl.exceptions import BadSignatureError as NaClBadSignatureError  # type: ignore[import-not-found]
+from nacl.signing import VerifyKey  # type: ignore[import-not-found]
 
 from .application_client.algorand_types import StdSigData
 
 
 # Check if a signature of a given message is valid
-def check_tx_signature_validity(
-    public_key: bytes, signature: bytes, message: bytes
-) -> bool:
+def check_tx_signature_validity(public_key: bytes, signature: bytes, message: bytes) -> bool:
     """Verify Ed25519 signature for Algorand transaction.
 
     Algorand transactions are signed with a "TX" prefix as per the Algorand protocol.
@@ -34,9 +32,7 @@ def check_tx_signature_validity(
     return check_signature_validity(public_key, signature, prefixed_message)
 
 
-def check_signature_validity(
-    public_key: bytes, signature: bytes, message: bytes
-) -> bool:
+def check_signature_validity(public_key: bytes, signature: bytes, message: bytes) -> bool:
     """Verify Ed25519 signature for any data.
 
     Any data signatures are verified directly without any prefix.
@@ -52,18 +48,17 @@ def check_signature_validity(
     """
     try:
         # Create verifying key from public key bytes
-        verifying_key = ed25519.VerifyingKey(public_key)
+        verifying_key = VerifyKey(public_key)
 
         # Verify the signature directly without any prefix
-        verifying_key.verify(signature, message)
+        verifying_key.verify(message, signature)
         return True
-    except ed25519.BadSignatureError:
+    except NaClBadSignatureError:
         # Signature verification failed
         return False
     except Exception:
         # Other errors (e.g., invalid key format)
         return False
-
 
 
 def verify_version(version: str) -> None:
@@ -89,12 +84,12 @@ def verify_version(version: str) -> None:
     assert version == vers_str
 
 
-def _read_makefile() -> List[str]:
+def _read_makefile() -> list[str]:
     """Read lines from the app/Makefile.version"""
 
     parent = Path(__file__).parent.parent.resolve()
     makefile = f"{parent}/app/Makefile.version"
-    with open(makefile, "r", encoding="utf-8") as f_p:
+    with open(makefile, encoding="utf-8") as f_p:
         lines = f_p.readlines()
     return lines
 
@@ -148,6 +143,8 @@ def build_to_sign(auth_request: StdSigData) -> bytes:
     client_data_json_hash = hashlib.sha256(canonified_client_data_json).digest()
 
     # Hash the authentication data
+    if auth_request.authenticationData is None:
+        raise ValueError("authenticationData is required")
     authenticator_data_hash = hashlib.sha256(auth_request.authenticationData).digest()
 
     # Concatenate both hashes
