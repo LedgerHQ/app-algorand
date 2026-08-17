@@ -6,7 +6,8 @@ from pathlib import Path
 
 import canonicaljson  # type: ignore[import-not-found]
 import msgpack  # type: ignore[import-not-found]
-import ed25519  # type: ignore[import-not-found]
+from nacl.exceptions import BadSignatureError as NaClBadSignatureError  # type: ignore[import-not-found]
+from nacl.signing import VerifyKey  # type: ignore[import-not-found]
 
 from .application_client.algorand_types import StdSigData
 
@@ -47,12 +48,12 @@ def check_signature_validity(public_key: bytes, signature: bytes, message: bytes
     """
     try:
         # Create verifying key from public key bytes
-        verifying_key = ed25519.VerifyingKey(public_key)
+        verifying_key = VerifyKey(public_key)
 
         # Verify the signature directly without any prefix
-        verifying_key.verify(signature, message)
+        verifying_key.verify(message, signature)
         return True
-    except ed25519.BadSignatureError:
+    except NaClBadSignatureError:
         # Signature verification failed
         return False
     except Exception:
