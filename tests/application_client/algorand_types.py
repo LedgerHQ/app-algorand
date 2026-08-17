@@ -6,7 +6,6 @@ from @zondax/ledger-algorand for arbitrary data signing operations.
 
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import Optional, Union
 
 
 class ScopeType(IntEnum):
@@ -24,18 +23,18 @@ class StdSigData:
     Used for ARC-60, CAIP-122, and WebAuthn signing operations.
     """
 
-    data: Union[str, bytes]
+    data: str | bytes
     signer: bytes
     domain: str
-    authenticationData: bytes
-    requestId: Optional[Union[str, bytes]] = None
-    hdPath: Optional[str] = None
-    signature: Optional[bytes] = None
+    authenticationData: bytes | None
+    requestId: str | bytes | None = None
+    hdPath: str | None = None
+    signature: bytes | None = None
 
 
 @dataclass
 class StdSignMetadata:
     """Metadata for standard signature operations."""
 
-    scope: ScopeType
+    scope: int
     encoding: str

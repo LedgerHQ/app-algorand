@@ -1,28 +1,25 @@
-import pytest
-import hashlib
-
 import base64
+import hashlib
 import struct
-import cbor2
-import canonicaljson
-from dataclasses import dataclass
-from typing import Optional
+from pathlib import Path
 
+import canonicaljson
+import cbor2
+import pytest
 from ragger.backend.interface import BackendInterface
 from ragger.error import ExceptionRAPDU
-from ragger.navigator.navigation_scenario import NavigateWithScenario
-from ragger.navigator import NavInsID, Navigator
+from ragger.navigator import Navigator, NavInsID
 
 # from .application_client.algorand_transaction import Transaction
 from .application_client.algorand_command_sender import AlgorandCommandSender, Errors
-from .application_client.algorand_types import StdSigData, StdSignMetadata, ScopeType
 from .application_client.algorand_response_unpacker import (
     unpack_get_public_key_response,
 )
-from .utils import check_signature_validity, build_to_sign
+from .application_client.algorand_types import ScopeType, StdSigData, StdSignMetadata
 from .data import (
     ARBITRARY_SIGN_TEST_CASES,
 )
+from .utils import build_to_sign, check_signature_validity
 
 DEFAULT_HD_PATH = "m/44'/283'/0'/0/0"
 
@@ -37,7 +34,7 @@ def sign_arbitrary_and_verify(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
     client: AlgorandCommandSender,
     public_key: bytes,
     snap_start_idx: int = 0,
@@ -64,7 +61,9 @@ def sign_arbitrary_and_verify(
         )
 
     # The device as yielded the result, parse it and ensure that the signature is correct
-    signature = client.get_async_response().data
+    async_response = client.get_async_response()
+    assert async_response is not None
+    signature = async_response.data
 
     # Build the data to sign
     to_sign = build_to_sign(auth_request)
@@ -83,7 +82,7 @@ def test_sign_arbitrary(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
 
     # append index to the test name
@@ -96,9 +95,7 @@ def test_sign_arbitrary(
     rapdu = client.get_address_and_public_key()
     _, public_key, _, _ = unpack_get_public_key_response(rapdu.data)
 
-    print(
-        f"km-logs  [test_sign_arbitrary_data.py] (test_sign_arbitrary_{test_case['idx']})  public_key: {public_key}"
-    )
+    print(f"km-logs  [test_sign_arbitrary_data.py] (test_sign_arbitrary_{test_case['idx']})  public_key: {public_key.hex()}")
 
     # Create the Data to Sign
     data = test_case["data"]
@@ -134,7 +131,7 @@ def test_sign_arbitrary_hdpath(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
 
     # Set account id to 2
@@ -147,9 +144,7 @@ def test_sign_arbitrary_hdpath(
     rapdu = client.get_address_and_public_key(account_id)
     _, public_key, _, _ = unpack_get_public_key_response(rapdu.data)
 
-    print(
-        f"km-logs  [test_sign_arbitrary_data.py] (test_sign_arbitrary_hdpath)  public_key: {public_key}"
-    )
+    print(f"km-logs  [test_sign_arbitrary_data.py] (test_sign_arbitrary_hdpath)  public_key: {public_key.hex()}")
 
     # Create the Data to Sign
     data = ARBITRARY_SIGN_TEST_CASES[0]["data"]
@@ -178,7 +173,10 @@ def test_sign_arbitrary_hdpath(
         public_key,
     )
 
-    signatureForAccountId0 = b"e8ef89c60790bc217a69e0b47fa35119b831e9fd7beb3c4219df2206c5d65d1a59691c7107dd0c0fe03c53a9e2faaf78a47d65d40cdab395bba88395e68f5a049000"
+    signatureForAccountId0 = (
+        b"e8ef89c60790bc217a69e0b47fa35119b831e9fd7beb3c4219df2206c5d65d1a"
+        b"59691c7107dd0c0fe03c53a9e2faaf78a47d65d40cdab395bba88395e68f5a049000"
+    )
     assert signatureForAccountId0 != signatureForAccountId2
 
 
@@ -188,7 +186,7 @@ def test_sign_arbitrary_no_hdpath(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
 
     # Use the app interface instead of raw interface
@@ -198,9 +196,7 @@ def test_sign_arbitrary_no_hdpath(
     rapdu = client.get_address_and_public_key()
     _, public_key, _, _ = unpack_get_public_key_response(rapdu.data)
 
-    print(
-        f"km-logs  [test_sign_arbitrary_data.py] (test_sign_arbitrary_no_hdpath)  public_key: {public_key}"
-    )
+    print(f"km-logs  [test_sign_arbitrary_data.py] (test_sign_arbitrary_no_hdpath)  public_key: {public_key.hex()}")
 
     # Create the Data to Sign
     data = ARBITRARY_SIGN_TEST_CASES[0]["data"]
@@ -235,7 +231,7 @@ def test_sign_arbitrary_no_request_id(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
 
     # Use the app interface instead of raw interface
@@ -245,9 +241,7 @@ def test_sign_arbitrary_no_request_id(
     rapdu = client.get_address_and_public_key()
     _, public_key, _, _ = unpack_get_public_key_response(rapdu.data)
 
-    print(
-        f"km-logs  [test_sign_arbitrary_data.py] (test_sign_arbitrary_no_hdpath)  public_key: {public_key}"
-    )
+    print(f"km-logs  [test_sign_arbitrary_data.py] (test_sign_arbitrary_no_hdpath)  public_key: {public_key.hex()}")
 
     # Create the Data to Sign
     data = ARBITRARY_SIGN_TEST_CASES[0]["data"]
@@ -282,7 +276,7 @@ def test_sign_arbitrary_no_request_id_and_no_hdpath(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
 
     # Use the app interface instead of raw interface
@@ -293,7 +287,9 @@ def test_sign_arbitrary_no_request_id_and_no_hdpath(
     _, public_key, _, _ = unpack_get_public_key_response(rapdu.data)
 
     print(
-        f"km-logs  [test_sign_arbitrary_data.py] (test_sign_arbitrary_no_request_id_and_no_hdpath)  public_key: {public_key}"
+        f"km-logs  [test_sign_arbitrary_data.py]"
+        f" (test_sign_arbitrary_no_request_id_and_no_hdpath)"
+        f"  public_key: {public_key.hex()}"
     )
 
     # Create the Data to Sign
@@ -328,7 +324,7 @@ def test_sign_arbitrary_multiple_signatures(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
 
     # Use the app interface instead of raw interface
@@ -338,9 +334,7 @@ def test_sign_arbitrary_multiple_signatures(
     rapdu = client.get_address_and_public_key()
     _, public_key, _, _ = unpack_get_public_key_response(rapdu.data)
 
-    print(
-        f"km-logs  [test_sign_arbitrary_data.py] (test_sign_arbitrary_multiple_signatures)  public_key: {public_key}"
-    )
+    print(f"km-logs  [test_sign_arbitrary_data.py] (test_sign_arbitrary_multiple_signatures)  public_key: {public_key.hex()}")
 
     # Create the Data to Sign
     data1 = ARBITRARY_SIGN_TEST_CASES[0]["data"]
@@ -384,7 +378,8 @@ def test_sign_arbitrary_multiple_signatures(
 
     # Figure out the number of snapshots based on the device
     print(
-        f"km-logs  [test_sign_arbitrary_data.py] (test_sign_arbitrary_multiple_signatures)  navigator.device.name: {navigator._device.name}"
+        "km-logs  [test_sign_arbitrary_data.py] (test_sign_arbitrary_multiple_signatures)"
+        f"  navigator.device.name: {navigator._device.name}"
     )
 
     match navigator._device.name:
@@ -419,7 +414,7 @@ def test_sign_arbitrary_authenticator_data_with_flags(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
 
     # Use the app interface instead of raw interface
@@ -430,7 +425,9 @@ def test_sign_arbitrary_authenticator_data_with_flags(
     _, public_key, _, _ = unpack_get_public_key_response(rapdu.data)
 
     print(
-        f"km-logs  [test_sign_arbitrary_data.py] (test_sign_arbitrary_authenticator_data_with_flags)  public_key: {public_key}"
+        f"km-logs  [test_sign_arbitrary_data.py]"
+        f" (test_sign_arbitrary_authenticator_data_with_flags)"
+        f"  public_key: {public_key.hex()}"
     )
 
     # Build the authenticator data structure
@@ -456,18 +453,6 @@ def test_sign_arbitrary_authenticator_data_with_flags(
     # Create extensions as CBOR dict
     extensions = {"booleanExt": True, "numericExt": 42, "stringExt": "test-value"}
     extensions_buffer = cbor2.dumps(extensions)
-
-    # Calculate total auth data length
-    auth_data_length = (
-        len(rpIdHash)
-        + 1
-        + 4
-        + len(aaguid)
-        + 2
-        + credential_id_length
-        + len(credential_public_key_buffer)
-        + len(extensions_buffer)
-    )
 
     # Build the auth data buffer
     auth_data = bytearray()
@@ -519,7 +504,7 @@ def test_sign_arbitrary_long_requestId(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
 
     # Use the app interface instead of raw interface
@@ -529,9 +514,7 @@ def test_sign_arbitrary_long_requestId(
     rapdu = client.get_address_and_public_key()
     _, public_key, _, _ = unpack_get_public_key_response(rapdu.data)
 
-    print(
-        f"km-logs  [test_sign_arbitrary_data.py] (test_sign_arbitrary_long_requestId)  public_key: {public_key}"
-    )
+    print(f"km-logs  [test_sign_arbitrary_data.py] (test_sign_arbitrary_long_requestId)  public_key: {public_key.hex()}")
 
     # Create the Data to Sign
     data = ARBITRARY_SIGN_TEST_CASES[0]["data"]
@@ -569,7 +552,7 @@ def test_sign_arbitrary_invalid_requestId(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
 
     # Use the app interface instead of raw interface
@@ -579,9 +562,7 @@ def test_sign_arbitrary_invalid_requestId(
     rapdu = client.get_address_and_public_key()
     _, public_key, _, _ = unpack_get_public_key_response(rapdu.data)
 
-    print(
-        f"km-logs  [test_sign_arbitrary_data.py] (test_sign_arbitrary_invalid_requestId)  public_key: {public_key}"
-    )
+    print(f"km-logs  [test_sign_arbitrary_data.py] (test_sign_arbitrary_invalid_requestId)  public_key: {public_key.hex()}")
 
     # Create the Data to Sign
     data = ARBITRARY_SIGN_TEST_CASES[0]["data"]
@@ -601,9 +582,7 @@ def test_sign_arbitrary_invalid_requestId(
         requestId=invalid_request_id_buffer,
     )
     with pytest.raises(ExceptionRAPDU) as e:
-        with client.sign_data(
-            auth_request, StdSignMetadata(scope=ScopeType.AUTH, encoding="base64")
-        ):
+        with client.sign_data(auth_request, StdSignMetadata(scope=ScopeType.AUTH, encoding="base64")):
             pass
     assert e.value.status == Errors.SW_DATA_INVALID
     assert e.value.data == b"Invalid Request ID"
@@ -615,7 +594,7 @@ def test_sign_arbitrary_invalid_scope(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
 
     # Use the app interface instead of raw interface
@@ -625,9 +604,7 @@ def test_sign_arbitrary_invalid_scope(
     rapdu = client.get_address_and_public_key()
     _, public_key, _, _ = unpack_get_public_key_response(rapdu.data)
 
-    print(
-        f"km-logs  [test_sign_arbitrary_data.py] (test_sign_arbitrary_invalid_requestId)  public_key: {public_key}"
-    )
+    print(f"km-logs  [test_sign_arbitrary_data.py] (test_sign_arbitrary_invalid_requestId)  public_key: {public_key.hex()}")
 
     # Create the Data to Sign
     data = ARBITRARY_SIGN_TEST_CASES[0]["data"]
@@ -646,9 +623,7 @@ def test_sign_arbitrary_invalid_scope(
     invalid_scope = 7
 
     with pytest.raises(ExceptionRAPDU) as e:
-        with client.sign_data(
-            auth_request, StdSignMetadata(scope=invalid_scope, encoding="base64")
-        ):
+        with client.sign_data(auth_request, StdSignMetadata(scope=invalid_scope, encoding="base64")):
             pass
     assert e.value.status == Errors.SW_INVALID_SCOPE
     assert e.value.data == b"Invalid Scope"
@@ -660,7 +635,7 @@ def test_sign_arbitrary_invalid_signer(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
 
     # Use the app interface instead of raw interface
@@ -670,7 +645,9 @@ def test_sign_arbitrary_invalid_signer(
     invalid_public_key = b"0" * 32
 
     print(
-        f"km-logs  [test_sign_arbitrary_data.py] (test_sign_arbitrary_invalid_signer)  invalid_public_key: {invalid_public_key}"
+        f"km-logs  [test_sign_arbitrary_data.py]"
+        f" (test_sign_arbitrary_invalid_signer)"
+        f"  invalid_public_key: {invalid_public_key.hex()}"
     )
 
     # Create the Data to Sign
@@ -688,9 +665,7 @@ def test_sign_arbitrary_invalid_signer(
         requestId=requestIdRandomBytes,
     )
     with pytest.raises(ExceptionRAPDU) as e:
-        with client.sign_data(
-            auth_request, StdSignMetadata(scope=ScopeType.AUTH, encoding="base64")
-        ):
+        with client.sign_data(auth_request, StdSignMetadata(scope=ScopeType.AUTH, encoding="base64")):
             pass
     assert e.value.status == Errors.SW_INVALID_SIGNER
     assert e.value.data == b"Invalid Signer"
@@ -702,7 +677,7 @@ def test_sign_arbitrary_invalid_encoding(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
 
     # Use the app interface instead of raw interface
@@ -712,9 +687,7 @@ def test_sign_arbitrary_invalid_encoding(
     rapdu = client.get_address_and_public_key()
     _, public_key, _, _ = unpack_get_public_key_response(rapdu.data)
 
-    print(
-        f"km-logs  [test_sign_arbitrary_data.py] (test_sign_arbitrary_invalid_encoding)  public_key: {public_key}"
-    )
+    print(f"km-logs  [test_sign_arbitrary_data.py] (test_sign_arbitrary_invalid_encoding)  public_key: {public_key.hex()}")
 
     # Set invalid encoding
     invalid_encoding = "wrong_encoding"
@@ -740,9 +713,7 @@ def test_sign_arbitrary_invalid_encoding(
         ):
             pass
     # assert e.value.status == Errors.SW_FAILED_DECODING
-    print(
-        f"km-logs  [test_sign_arbitrary_data.py] (test_sign_arbitrary_invalid_encoding)  error: {e.value}"
-    )
+    print(f"km-logs  [test_sign_arbitrary_data.py] (test_sign_arbitrary_invalid_encoding)  error: {e.value}")
     assert str(e.value) == "Failed decoding"
 
 
@@ -752,7 +723,7 @@ def test_sign_arbitrary_missing_domain(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
 
     # Use the app interface instead of raw interface
@@ -762,12 +733,7 @@ def test_sign_arbitrary_missing_domain(
     rapdu = client.get_address_and_public_key()
     _, public_key, _, _ = unpack_get_public_key_response(rapdu.data)
 
-    print(
-        f"km-logs  [test_sign_arbitrary_data.py] (test_sign_arbitrary_invalid_encoding)  public_key: {public_key}"
-    )
-
-    # Set invalid encoding
-    invalid_encoding = "wrong_encoding"
+    print(f"km-logs  [test_sign_arbitrary_data.py] (test_sign_arbitrary_invalid_encoding)  public_key: {public_key.hex()}")
 
     # Create the Data to Sign
     data = ARBITRARY_SIGN_TEST_CASES[0]["data"]
@@ -783,10 +749,8 @@ def test_sign_arbitrary_missing_domain(
         authenticationData=auth_data,
         requestId=requestIdRandomBytes,
     )
-    with pytest.raises(Exception) as e:
-        with client.sign_data(
-            auth_request, StdSignMetadata(scope=ScopeType.AUTH, encoding="base64")
-        ):
+    with pytest.raises(ExceptionRAPDU) as e:
+        with client.sign_data(auth_request, StdSignMetadata(scope=ScopeType.AUTH, encoding="base64")):
             pass
     assert e.value.status == Errors.SW_MISSING_DOMAIN
     assert e.value.data == b"Missing Domain"
@@ -798,7 +762,7 @@ def test_sign_arbitrary_missing_authenticated_data(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
 
     # Use the app interface instead of raw interface
@@ -809,14 +773,11 @@ def test_sign_arbitrary_missing_authenticated_data(
     _, public_key, _, _ = unpack_get_public_key_response(rapdu.data)
 
     print(
-        f"km-logs  [test_sign_arbitrary_data.py] (test_sign_arbitrary_missing_authenticated_data)  public_key: {public_key}"
+        f"km-logs  [test_sign_arbitrary_data.py] (test_sign_arbitrary_missing_authenticated_data)  public_key: {public_key.hex()}"
     )
 
     # Create the Data to Sign
     data = ARBITRARY_SIGN_TEST_CASES[0]["data"]
-
-    # Create the Auth Data
-    auth_data = hashlib.sha256(b"arc60.io").digest()
 
     # Create the Auth Request
     auth_request = StdSigData(
@@ -828,9 +789,7 @@ def test_sign_arbitrary_missing_authenticated_data(
         hdPath=DEFAULT_HD_PATH,
     )
     with pytest.raises(ExceptionRAPDU) as e:
-        with client.sign_data(
-            auth_request, StdSignMetadata(scope=ScopeType.AUTH, encoding="base64")
-        ):
+        with client.sign_data(auth_request, StdSignMetadata(scope=ScopeType.AUTH, encoding="base64")):
             pass
     assert e.value.status == Errors.SW_MISSING_AUTH_DATA
     assert e.value.data == b"Missing Authentication Data"
@@ -842,7 +801,7 @@ def test_sign_arbitrary_bad_json(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
 
     # Use the app interface instead of raw interface
@@ -852,9 +811,7 @@ def test_sign_arbitrary_bad_json(
     rapdu = client.get_address_and_public_key()
     _, public_key, _, _ = unpack_get_public_key_response(rapdu.data)
 
-    print(
-        f"km-logs  [test_sign_arbitrary_data.py] (test_sign_arbitrary_bad_json)  public_key: {public_key}"
-    )
+    print(f"km-logs  [test_sign_arbitrary_data.py] (test_sign_arbitrary_bad_json)  public_key: {public_key.hex()}")
 
     # Create the Data to Sign
     data = base64.b64encode(b"{ this is not valid JSON").decode("utf-8")
@@ -872,9 +829,7 @@ def test_sign_arbitrary_bad_json(
         hdPath=DEFAULT_HD_PATH,
     )
     with pytest.raises(ExceptionRAPDU) as e:
-        with client.sign_data(
-            auth_request, StdSignMetadata(scope=ScopeType.AUTH, encoding="base64")
-        ):
+        with client.sign_data(auth_request, StdSignMetadata(scope=ScopeType.AUTH, encoding="base64")):
             pass
     assert e.value.status == Errors.SW_BAD_JSON
     assert e.value.data == b"Bad JSON"
@@ -886,7 +841,7 @@ def test_sign_arbitrary_failed_domain_auth(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
 
     # Use the app interface instead of raw interface
@@ -896,9 +851,7 @@ def test_sign_arbitrary_failed_domain_auth(
     rapdu = client.get_address_and_public_key()
     _, public_key, _, _ = unpack_get_public_key_response(rapdu.data)
 
-    print(
-        f"km-logs  [test_sign_arbitrary_data.py] (test_sign_arbitrary_failed_domain_auth)  public_key: {public_key}"
-    )
+    print(f"km-logs  [test_sign_arbitrary_data.py] (test_sign_arbitrary_failed_domain_auth)  public_key: {public_key.hex()}")
 
     # Create the Data to Sign
     data = ARBITRARY_SIGN_TEST_CASES[0]["data"]
@@ -916,9 +869,7 @@ def test_sign_arbitrary_failed_domain_auth(
         hdPath=DEFAULT_HD_PATH,
     )
     with pytest.raises(ExceptionRAPDU) as e:
-        with client.sign_data(
-            auth_request, StdSignMetadata(scope=ScopeType.AUTH, encoding="base64")
-        ):
+        with client.sign_data(auth_request, StdSignMetadata(scope=ScopeType.AUTH, encoding="base64")):
             pass
     assert e.value.status == Errors.SW_FAILED_DOMAIN_AUTH
     assert e.value.data == b"Failed Domain Auth"
@@ -930,7 +881,7 @@ def test_sign_arbitrary_failed_hd_path(
     backend: BackendInterface,
     navigator: Navigator,
     test_name: str,
-    default_screenshot_path: str,
+    default_screenshot_path: Path,
 ) -> None:
 
     # Use the app interface instead of raw interface
@@ -940,9 +891,7 @@ def test_sign_arbitrary_failed_hd_path(
     rapdu = client.get_address_and_public_key()
     _, public_key, _, _ = unpack_get_public_key_response(rapdu.data)
 
-    print(
-        f"km-logs  [test_sign_arbitrary_data.py] (test_sign_arbitrary_failed_domain_auth)  public_key: {public_key}"
-    )
+    print(f"km-logs  [test_sign_arbitrary_data.py] (test_sign_arbitrary_failed_domain_auth)  public_key: {public_key.hex()}")
 
     # Create the Data to Sign
     data = ARBITRARY_SIGN_TEST_CASES[0]["data"]
@@ -960,8 +909,6 @@ def test_sign_arbitrary_failed_hd_path(
         hdPath="m/44'/999'/0'/0/0",
     )
     with pytest.raises(ExceptionRAPDU) as e:
-        with client.sign_data(
-            auth_request, StdSignMetadata(scope=ScopeType.AUTH, encoding="base64")
-        ):
+        with client.sign_data(auth_request, StdSignMetadata(scope=ScopeType.AUTH, encoding="base64")):
             pass
     assert e.value.status == Errors.SW_FAILED_HD_PATH
