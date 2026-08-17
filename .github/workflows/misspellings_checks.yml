@@ -21,4 +21,4 @@ jobs:
       check_filenames: true
       ignore_words_list: "optin,asnd"
       # Check everything but deps/ and tests/testcases/*.json
-      src_path: ".github/,app/src/,cli/,docs/,fuzz/,js/src/,tests/*.cpp,tests/utils/,Makefile,README.md,CMakeLists.txt,ledger_app.toml"
+      skip_path: "deps,tests/testcases/*.json"
