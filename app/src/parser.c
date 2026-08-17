@@ -379,8 +379,8 @@ static parser_error_t parser_printCommonParams(const parser_tx_t *parser_tx_obj,
 
     case IDX_COMMON_REKEY_TO: {
         snprintf(outKey, outKeyLen, "Rekey to");
-        const char warning[9] = "WARNING: ";
-        const uint8_t warning_size = strnlen(warning, 9);
+        const char warning[10] = "WARNING: ";
+        const uint8_t warning_size = strnlen(warning, sizeof(warning));
         MEMCPY(buff, warning, warning_size);
         if (encodePubKey((uint8_t *)(buff + warning_size), sizeof(buff) - warning_size, parser_tx_obj->rekey) == 0) {
             return parser_unexpected_buffer_end;
